@@ -38,7 +38,7 @@ impl ScrollableHandle {
     }
 
     /// max offset, this is positive
-    pub fn max_offset(&self) -> gpui::Size<Pixels> {
+    pub fn max_offset(&self) -> gpui::Point<Pixels> {
         match self {
             ScrollableHandle::Regular(h) => h.max_offset(),
             ScrollableHandle::UniformList { handle, .. } => {
@@ -59,11 +59,11 @@ impl ScrollableHandle {
 
     pub fn total_content_height(&self) -> f32 {
         match self {
-            ScrollableHandle::Regular(h) => (h.bounds().size.height + h.max_offset().height).into(),
+            ScrollableHandle::Regular(h) => (h.bounds().size.height + h.max_offset().y).into(),
             ScrollableHandle::UniformList { handle, .. } => {
                 let handle = &handle.0.borrow().base_handle;
 
-                (handle.bounds().size.height + handle.max_offset().height).into()
+                (handle.bounds().size.height + handle.max_offset().y).into()
             }
         }
     }
@@ -204,7 +204,7 @@ impl Element for Scrollbar {
         // current offset is negative
         let raw_offset = handle.offset().y;
         let scroll_position = -raw_offset;
-        let handle_max_offset = handle.max_offset().height;
+        let handle_max_offset = handle.max_offset().y;
 
         let max_offset = if handle_max_offset > px(0.0) {
             handle_max_offset

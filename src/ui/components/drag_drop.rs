@@ -408,7 +408,7 @@ pub fn perform_edge_scroll(
         EdgeScrollDirection::Down => {
             let current_offset = scroll_handle.offset();
             let max_offset = scroll_handle.max_offset();
-            let new_y = (current_offset.y - config.scroll_speed).max(-max_offset.height);
+            let new_y = (current_offset.y - config.scroll_speed).max(-max_offset.y);
             if new_y != current_offset.y {
                 scroll_handle.set_offset(point(current_offset.x, new_y));
                 true

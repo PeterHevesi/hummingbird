@@ -14,12 +14,12 @@ On Linux, you'll need the development headers for several packages. The followin
 
 - **Fedora/CentOS/EL**
   ```sh
-  sudo dnf install libxkbcommon-devel libxkbcommon-x11-devel alsa-lib-devel make gcc perl-core pcre-devel zlib-devel libX11-devel wayland-devel pulseaudio-libs-devel openssl-devel libxcb-devel pulseaudio-libs-devel
+  sudo dnf install libxkbcommon-devel libxkbcommon-x11-devel alsa-lib-devel make gcc perl-core pcre-devel zlib-devel libX11-devel wayland-devel pulseaudio-libs-devel openssl-devel libxcb-devel pulseaudio-libs-devel fontconfig-devel
   ```
 - **Ubuntu**
   ```sh
   sudo apt update
-  sudo apt install libasound2-dev pkg-config libxkbcommon-dev libxkbcommon-x11-dev libx11-xcb-dev libpulse-dev build-essential
+  sudo apt install libasound2-dev pkg-config libxkbcommon-dev libxkbcommon-x11-dev libx11-xcb-dev libpulse-dev build-essential libfontconfig1-dev
   ```
   
 ### NixOS / Nix / Nix (darwin)

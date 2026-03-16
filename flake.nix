@@ -41,6 +41,7 @@
                 pkgs.libxkbcommon
                 pkgs.xorg.libxcb
                 pkgs.xorg.libX11
+                pkgs.fontconfig
                 (pkgs.alsa-lib-with-plugins.override {
                   plugins = [pkgs.alsa-plugins pkgs.pipewire];
                 })
