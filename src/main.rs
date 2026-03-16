@@ -23,7 +23,7 @@ const VERSION_STRING: &str = env!("HUMMINGBIRD_VERSION_STRING");
 static RUNTIME: LazyLock<tokio::runtime::Runtime> = LazyLock::new(|| {
     tokio::runtime::Builder::new_multi_thread()
         .enable_all()
-        .worker_threads(1)
+        .worker_threads(2)
         .build()
         .unwrap()
 });
