@@ -22,6 +22,7 @@
   "ACTION_QUIT": "Quit",
   "ACTION_SEARCH": "Search",
   "ACTION_SETTINGS": "Settings",
+  "ACTION_SHUFFLE_ALL": "Shuffle All Tracks",
   "ADD_TO_PLAYLIST": "Add to playlist",
   "ADD_TO_QUEUE": "Add to queue",
   "ADD_TO_SELECTED_PLAYLIST": "Add to {{name}}",
@@ -67,6 +68,7 @@
   "LANGUAGE_SYSTEM_DEFAULT": "System Default",
   "LIBRARY": "Library",
   "LIBRARY_FORCE_RESCAN": "Rescan Entire Library",
+  "LIBRARY_SHUFFLE_ALL": "Shuffle All",
   "LIKED_SONGS": "Liked Songs",
   "PALETTE_SHOW_MORE": {
     "one": "Show {{count}} more...",

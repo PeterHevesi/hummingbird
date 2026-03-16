@@ -605,6 +605,14 @@ pub async fn artist_id_for_album(pool: &SqlitePool, album_id: i64) -> sqlx::Resu
     Ok(artist_id)
 }
 
+pub async fn get_all_tracks(pool: &SqlitePool) -> sqlx::Result<Vec<(String, i64, i64)>> {
+    let query = include_str!("../../queries/library/get_all_tracks.sql");
+
+    let tracks: Vec<(String, i64, i64)> = sqlx::query_as(query).fetch_all(pool).await?;
+
+    Ok(tracks)
+}
+
 pub trait LibraryAccess {
     fn list_albums(&self, sort_method: AlbumSortMethod) -> sqlx::Result<Vec<(u32, String)>>;
     // TODO: handle this better
@@ -643,6 +651,7 @@ pub trait LibraryAccess {
     ) -> sqlx::Result<Arc<Vec<Track>>>;
     fn get_all_tracks_by_artist(&self, artist_id: i64) -> sqlx::Result<Arc<Vec<Track>>>;
     fn artist_id_for_album(&self, album_id: i64) -> sqlx::Result<i64>;
+    fn get_all_tracks(&self) -> sqlx::Result<Vec<(String, i64, i64)>>;
 }
 
 impl LibraryAccess for App {
@@ -788,5 +797,10 @@ impl LibraryAccess for App {
     fn artist_id_for_album(&self, album_id: i64) -> sqlx::Result<i64> {
         let pool: &Pool = self.global();
         crate::RUNTIME.block_on(artist_id_for_album(&pool.0, album_id))
+    }
+
+    fn get_all_tracks(&self) -> sqlx::Result<Vec<(String, i64, i64)>> {
+        let pool: &Pool = self.global();
+        crate::RUNTIME.block_on(get_all_tracks(&pool.0))
     }
 }

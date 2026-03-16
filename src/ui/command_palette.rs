@@ -15,7 +15,9 @@ use crate::ui::{
         modal::modal,
         palette::{FinderItemLeft, Palette, PaletteItem},
     },
-    global_actions::{About, ForceScan, Next, PlayPause, Previous, Quit, Search, Settings},
+    global_actions::{
+        About, ForceScan, Next, PlayPause, Previous, Quit, Search, Settings, ShuffleAll,
+    },
 };
 
 actions!(hummingbird, [OpenPalette]);
@@ -215,6 +217,16 @@ impl CommandPalette {
                     Some(tr!("ACTION_GROUP_SCAN", "Scan")),
                     tr!("ACTION_FORCESCAN", "Rescan Entire Library"),
                     ForceScan,
+                    None,
+                ),
+            );
+
+            items.insert(
+                ("shuffle::all", 0),
+                Command::new(
+                    Some(tr!("ACTION_GROUP_PLAYBACK")),
+                    tr!("ACTION_SHUFFLE_ALL", "Shuffle All Tracks"),
+                    ShuffleAll,
                     None,
                 ),
             );

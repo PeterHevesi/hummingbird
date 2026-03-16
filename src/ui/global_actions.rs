@@ -3,8 +3,8 @@ use gpui::{App, KeyBinding, actions};
 use tracing::{debug, info};
 
 use crate::{
-    library::scan::ScanInterface,
-    playback::{interface::PlaybackInterface, thread::PlaybackState},
+    library::{db::LibraryAccess, scan::ScanInterface},
+    playback::{interface::PlaybackInterface, queue::QueueItemData, thread::PlaybackState},
     ui::{
         command_palette::OpenPalette,
         components::menus_builder::{MenuBuilder, MenusBuilder, menu_item, menu_separator},
@@ -15,7 +15,7 @@ use crate::{
 use super::models::{Models, PlaybackInfo};
 
 actions!(hummingbird, [Quit, About, Search, Settings]);
-actions!(player, [PlayPause, Next, Previous]);
+actions!(player, [PlayPause, Next, Previous, ShuffleAll]);
 actions!(scan, [ForceScan]);
 actions!(hummingbird, [HideSelf, HideOthers, ShowAll]);
 actions!(help, [Discord, Patreon, Issues]);
@@ -35,6 +35,7 @@ pub fn register_actions(cx: &mut App) {
     cx.on_action(discord);
     cx.on_action(patreon);
     cx.on_action(issues);
+    cx.on_action(shuffle_all);
     debug!("actions: {:?}", cx.all_action_names());
     debug!("action available: {:?}", cx.is_action_available(&Quit));
     if cfg!(target_os = "macos") {
@@ -89,11 +90,20 @@ pub fn register_actions(cx: &mut App) {
             ))
             .add_item(menu_item(tr!("SEARCH", "Search"), Search, false)),
         )
-        .add_menu(MenuBuilder::new(tr!("LIBRARY")).add_item(menu_item(
-            tr!("LIBRARY_FORCE_RESCAN", "Rescan Entire Library"),
-            ForceScan,
-            false,
-        )))
+        .add_menu(
+            MenuBuilder::new(tr!("LIBRARY"))
+                .add_item(menu_item(
+                    tr!("LIBRARY_SHUFFLE_ALL", "Shuffle All"),
+                    ShuffleAll,
+                    false,
+                ))
+                .add_item(menu_separator(false))
+                .add_item(menu_item(
+                    tr!("LIBRARY_FORCE_RESCAN", "Rescan Entire Library"),
+                    ForceScan,
+                    false,
+                )),
+        )
         .add_menu(
             MenuBuilder::new(tr!(
                 "WINDOW",
@@ -191,4 +201,20 @@ fn patreon(_: &Patreon, cx: &mut App) {
 
 fn issues(_: &Issues, cx: &mut App) {
     cx.open_url("https://github.com/hummingbird-player/hummingbird/issues");
+}
+
+fn shuffle_all(_: &ShuffleAll, cx: &mut App) {
+    if let Ok(tracks) = cx.get_all_tracks() {
+        let tracks = tracks
+            .into_iter()
+            .map(|v| QueueItemData::new(cx, v.0.into(), Some(v.1), Some(v.2)))
+            .collect();
+
+        let interface = cx.global::<PlaybackInterface>();
+
+        if !(*cx.global::<PlaybackInfo>().shuffling.read(cx)) {
+            interface.toggle_shuffle();
+        }
+        interface.replace_queue(tracks);
+    }
 }
