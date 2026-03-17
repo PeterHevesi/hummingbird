@@ -284,6 +284,9 @@ impl SymphoniaStream {
                         && self.current_metadata.replaygain_album_gain.is_none()
                     {
                         self.current_metadata.replaygain_album_gain = parse_r128_gain(&tag.value);
+                    // ID3 shenanigans
+                    } else if key.eq_ignore_ascii_case("TXXX:MusicBrainz Album Id") {
+                        self.current_metadata.mbid_album = Some(tag.value.to_string());
                     }
                 }
             }
