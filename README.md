@@ -17,13 +17,13 @@ design standard.
 - ReplayGain
 - Desktop integration
 - Playlists
+- Lyrics
 
 ## Planned Features
 - WASM Extension support:
   - Codecs
   - Scrobble services
   - Metadata services
-- Lyrics support
 - Improved library management
 
 # Usage
