@@ -77,6 +77,14 @@ fn scan_path_for_album_art(
     None
 }
 
+fn resolve_lyrics(path: &Utf8Path, embedded_lyrics: Option<String>) -> Option<String> {
+    let sidecar_lyrics = sidecar_lyrics_path(path)
+        .and_then(|lrc_path| std::fs::read_to_string(lrc_path).ok())
+        .filter(|content| !content.trim().is_empty());
+
+    sidecar_lyrics.or(embedded_lyrics)
+}
+
 /// Process album art into a (resized_full_image, thumbnail_bmp) pair.
 ///
 /// The thumbnail is always a 70×70 BMP. The full-size image is passed through if both dimensions
@@ -146,13 +154,7 @@ pub fn read_metadata_for_path(
                 metadata.2 = Some(art.to_vec().into_boxed_slice());
             }
 
-            if metadata.0.lyrics.is_none() {
-                if let Some(lrc_path) = sidecar_lyrics_path(path) {
-                    if let Ok(content) = std::fs::read_to_string(lrc_path) {
-                        metadata.0.lyrics = Some(content);
-                    }
-                }
-            }
+            metadata.0.lyrics = resolve_lyrics(path, metadata.0.lyrics.take());
 
             return Some(metadata);
         }
