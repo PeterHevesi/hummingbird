@@ -263,6 +263,9 @@ impl SymphoniaStream {
                 Some(StandardTagKey::ReplayGainAlbumPeak) => {
                     self.current_metadata.replaygain_album_peak = parse_rg_float(&tag.value);
                 }
+                Some(StandardTagKey::DiscSubtitle) => {
+                    self.current_metadata.disc_subtitle = Some(tag.value.to_string());
+                }
                 _ => {
                     // Handle non-standard ReplayGain tag keys and R128 tags
                     let key = tag.key.as_str();

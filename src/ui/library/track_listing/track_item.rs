@@ -219,6 +219,16 @@ impl Render for TrackItem {
                                                     "Side {{side}}",
                                                     side = side
                                                 ))
+                                            } else if let Some(subtitle) = &self.track.disc_subtitle
+                                            {
+                                                let subtitle = subtitle.0.as_str();
+
+                                                this.child(tr!(
+                                                    "TRACK_DISC_SUBTITLE",
+                                                    "Disc {{num}} - {{subtitle}}",
+                                                    num = num,
+                                                    subtitle = subtitle
+                                                ))
                                             } else {
                                                 this.child(tr!(
                                                     "TRACK_DISC",

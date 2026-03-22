@@ -244,6 +244,8 @@ pub struct Track {
     pub rg_album_gain: Option<f64>,
     #[sqlx(default)]
     pub rg_album_peak: Option<f64>,
+    #[sqlx(default)]
+    pub disc_subtitle: Option<DBString>,
 }
 
 #[derive(sqlx::Type, Clone, Copy, Debug, PartialEq)]

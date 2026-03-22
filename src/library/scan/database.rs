@@ -247,6 +247,7 @@ async fn insert_track(
             .bind(metadata.replaygain_track_peak)
             .bind(metadata.replaygain_album_gain)
             .bind(metadata.replaygain_album_peak)
+            .bind(&metadata.disc_subtitle)
             .fetch_one(&mut *conn)
             .await;
 

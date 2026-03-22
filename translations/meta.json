@@ -913,7 +913,13 @@
   },
   "TRACK_DISC": {
     "context": "track_item.rs",
-    "definedIn": "src/ui/library/track_listing/track_item.rs:224",
+    "definedIn": "src/ui/library/track_listing/track_item.rs:234",
+    "plural": false,
+    "description": null
+  },
+  "TRACK_DISC_SUBTITLE": {
+    "context": "track_item.rs",
+    "definedIn": "src/ui/library/track_listing/track_item.rs:227",
     "plural": false,
     "description": null
   },

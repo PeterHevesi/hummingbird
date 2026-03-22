@@ -164,6 +164,7 @@
   "TABLE_TRACKS": "Tracks",
   "TRACKS": "Tracks",
   "TRACK_DISC": "Disc {{num}}",
+  "TRACK_DISC_SUBTITLE": "Disc {{num}} - {{subtitle}}",
   "TRACK_NUMBER": "#",
   "TRACK_SIDE": "Side {{side}}",
   "UNKNOWN_ARTIST": "Unknown Artist",

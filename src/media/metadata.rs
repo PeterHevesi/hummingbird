@@ -24,6 +24,7 @@ pub struct Metadata {
     pub track_max: Option<u64>,
     pub disc_current: Option<u64>,
     pub disc_max: Option<u64>,
+    pub disc_subtitle: Option<String>,
     pub vinyl_numbering: bool,
 
     pub label: Option<String>,
