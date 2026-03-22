@@ -210,6 +210,7 @@ impl Render for InfoSection {
                                 .w(px(36.0))
                                 .h(px(36.0))
                                 .mb(px(6.0))
+                                .flex_shrink_0()
                                 .on_hover(cx.listener(|this, is_hovering: &bool, _, cx| {
                                     if this.is_hovering_art != *is_hovering {
                                         this.is_hovering_art = *is_hovering;
@@ -274,16 +275,19 @@ impl Render for InfoSection {
                                     .line_height(rems(1.0))
                                     .text_size(px(15.0))
                                     .gap_1()
+                                    .w_full()
                                     .overflow_x_hidden()
+                                    .w_full()
                                     .child(
                                         div()
                                             .font_weight(FontWeight::EXTRA_BOLD)
                                             .text_ellipsis()
+                                            .w_full()
                                             .child(self.track_name.clone().unwrap_or(
                                                 tr!("UNKNOWN_TRACK", "Unknown Track").into(),
                                             )),
                                     )
-                                    .child(div().text_ellipsis().child(
+                                    .child(div().text_ellipsis().w_full().child(
                                         self.artist_name.clone().unwrap_or(
                                             tr!("UNKNOWN_ARTIST", "Unknown Artist").into(),
                                         ),
