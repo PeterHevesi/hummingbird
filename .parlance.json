@@ -6,6 +6,12 @@
       "type": "cntp-rs",
       "path": "/translations/{lang}.json",
       "baseLang": "en"
+    },
+    {
+      "name": "Hummingbird Metadata",
+      "type": "i18next",
+      "path": "/res/bundle_translations/{lang}.json",
+      "baseLang": "en"
     }
   ]
 }
