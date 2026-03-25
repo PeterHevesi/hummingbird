@@ -601,13 +601,13 @@
   },
   "RELEASED_DATE": {
     "context": "release_view.rs",
-    "definedIn": "src/ui/library/release_view.rs:270",
+    "definedIn": "src/ui/library/release_view.rs:235",
     "plural": false,
     "description": null
   },
   "RELEASED_YEAR": {
     "context": "release_view.rs",
-    "definedIn": "src/ui/library/release_view.rs:276",
+    "definedIn": "src/ui/library/release_view.rs:244",
     "plural": false,
     "description": null
   },

@@ -18,8 +18,11 @@ use crate::{
             scrollbar::{RightPad, floating_scrollbar},
             table::table_data::TABLE_MAX_WIDTH,
         },
-        library::track_listing::{ArtistNameVisibility, TrackListing},
-        models::PlaybackInfo,
+        library::{
+            ViewSwitchMessage,
+            track_listing::{ArtistNameVisibility, TrackListing},
+        },
+        models::{Models, PlaybackInfo},
         theme::Theme,
     },
 };
@@ -97,6 +100,158 @@ impl ReleaseView {
             }
         })
     }
+
+    fn render_header(
+        &self,
+        theme: &Theme,
+        has_available_tracks: bool,
+        current_track_in_album: bool,
+        is_playing: bool,
+    ) -> impl IntoElement {
+        div()
+            .pt(px(18.0))
+            .flex_shrink()
+            .flex()
+            .overflow_x_hidden()
+            .px(px(18.0))
+            .w_full()
+            .child(
+                div()
+                    .rounded(px(10.0))
+                    .bg(theme.album_art_background)
+                    .shadow_sm()
+                    .w(px(160.0))
+                    .h(px(160.0))
+                    .flex_shrink_0()
+                    .overflow_hidden()
+                    .child(
+                        img(self.img_path.clone())
+                            .min_w(px(160.0))
+                            .min_h(px(160.0))
+                            .max_w(px(160.0))
+                            .max_h(px(160.0))
+                            .overflow_hidden()
+                            .flex()
+                            // TODO: Ideally this should be ObjectFit::Cover, but this
+                            // breaks rounding
+                            // FIXME: This is a GPUI bug
+                            .object_fit(ObjectFit::Fill)
+                            .rounded(px(10.0)),
+                    ),
+            )
+            .child(
+                div()
+                    .ml(px(18.0))
+                    .mt_auto()
+                    .flex_shrink()
+                    .flex()
+                    .flex_col()
+                    .w_full()
+                    .overflow_x_hidden()
+                    .child(
+                        div()
+                            .id(("release_view_artist", self.album.id as usize))
+                            .text_ellipsis()
+                            .overflow_x_hidden()
+                            .cursor_pointer()
+                            .on_click({
+                                let artist_id = self.album.artist_id;
+                                move |_, _, cx| {
+                                    let model = cx.global::<Models>().switcher_model.clone();
+
+                                    model.update(cx, |_, cx| {
+                                        cx.emit(ViewSwitchMessage::Artist(artist_id));
+                                    })
+                                }
+                            })
+                            .when_some(self.artist_name.clone(), |this, artist| this.child(artist)),
+                    )
+                    .child(
+                        div()
+                            .font_weight(FontWeight::EXTRA_BOLD)
+                            .text_size(rems(2.5))
+                            .line_height(rems(2.75))
+                            .overflow_x_hidden()
+                            .pb(px(10.0))
+                            .w_full()
+                            .text_ellipsis()
+                            .child(self.album.title.clone()),
+                    )
+                    .child(playback_controls(
+                        "release",
+                        has_available_tracks,
+                        current_track_in_album,
+                        is_playing,
+                        {
+                            let tracks = self.track_listing.tracks().clone();
+                            move |cx| {
+                                tracks
+                                    .iter()
+                                    .filter(|track| is_track_available(track))
+                                    .map(|track| {
+                                        QueueItemData::new(
+                                            cx,
+                                            track.location.clone(),
+                                            Some(track.id),
+                                            track.album_id,
+                                        )
+                                    })
+                                    .collect()
+                            }
+                        },
+                    )),
+            )
+    }
+
+    fn render_footer(&self, theme: &Theme) -> impl IntoElement {
+        div()
+            .flex()
+            .flex_col()
+            .text_sm()
+            .ml(px(18.0))
+            .pt(px(12.0))
+            .pb(px(12.0))
+            .font_weight(FontWeight::SEMIBOLD)
+            .text_color(theme.text_secondary)
+            .when_some(self.release_info.clone(), |this, release_info| {
+                this.child(div().child(release_info))
+            })
+            .when_some(
+                self.album
+                    .release_date
+                    .as_ref()
+                    .zip(self.album.date_precision),
+                |this, (date, precision)| match precision {
+                    1 => {
+                        if let Ok(nd) =
+                            chrono::NaiveDate::parse_from_str(date.0.as_str(), "%Y-%m-%d")
+                        {
+                            let dt = nd.and_hms_opt(0, 0, 0).unwrap();
+                            let utc = chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(
+                                dt,
+                                chrono::Utc,
+                            );
+                            this.child(tr!(
+                                "RELEASED_DATE",
+                                "Released {{date}}",
+                                date:date("YMD", length="long")=utc
+                            ))
+                        } else {
+                            this
+                        }
+                    }
+                    0 => this.child(tr!(
+                        "RELEASED_YEAR",
+                        "Released {{year}}",
+                        year = date.0.as_str()[..4]
+                    )),
+                    _ => this,
+                },
+            )
+            .when_some(self.album.isrc.as_ref(), |this, isrc| {
+                this.child(div().child(isrc.clone()))
+            })
+    }
 }
 
 impl Render for ReleaseView {
@@ -144,93 +299,12 @@ impl Render for ReleaseView {
                     .w_full()
                     .flex_shrink()
                     .overflow_x_hidden()
-                    .child(
-                        div()
-                            .pt(px(18.0))
-                            .flex_shrink()
-                            .flex()
-                            .overflow_x_hidden()
-                            .px(px(18.0))
-                            .w_full()
-                            .child(
-                                div()
-                                    .rounded(px(10.0))
-                                    .bg(theme.album_art_background)
-                                    .shadow_sm()
-                                    .w(px(160.0))
-                                    .h(px(160.0))
-                                    .flex_shrink_0()
-                                    .overflow_hidden()
-                                    .child(
-                                        img(self.img_path.clone())
-                                            .min_w(px(160.0))
-                                            .min_h(px(160.0))
-                                            .max_w(px(160.0))
-                                            .max_h(px(160.0))
-                                            .overflow_hidden()
-                                            .flex()
-                                            // TODO: Ideally this should be ObjectFit::Cover, but this
-                                            // breaks rounding
-                                            // FIXME: This is a GPUI bug
-                                            .object_fit(ObjectFit::Fill)
-                                            .rounded(px(10.0)),
-                                    ),
-                            )
-                            .child(
-                                div()
-                                    .ml(px(18.0))
-                                    .mt_auto()
-                                    .flex_shrink()
-                                    .flex()
-                                    .flex_col()
-                                    .w_full()
-                                    .overflow_x_hidden()
-                                    .child(
-                                        div()
-                                            .text_ellipsis()
-                                            .overflow_x_hidden()
-                                            .when_some(self.artist_name.clone(), |this, artist| {
-                                                this.child(artist)
-                                            }),
-                                    )
-                                    .child(
-                                        div()
-                                            .font_weight(FontWeight::EXTRA_BOLD)
-                                            .text_size(rems(2.5))
-                                            .line_height(rems(2.75))
-                                            .overflow_x_hidden()
-                                            .pb(px(10.0))
-                                            .w_full()
-                                            .text_ellipsis()
-                                            .child(self.album.title.clone()),
-                                    )
-                                    .child(
-                                        playback_controls(
-                                            "release",
-                                            has_available_tracks,
-                                            current_track_in_album,
-                                            is_playing,
-                                            {
-                                                let tracks = self.track_listing.tracks().clone();
-                                                move |cx| {
-                                                    tracks
-                                                        .iter()
-                                                        .filter(|track| is_track_available(track))
-                                                        .map(|track| {
-                                                            QueueItemData::new(
-                                                                cx,
-                                                                track.location.clone(),
-                                                                Some(track.id),
-                                                                track.album_id,
-                                                            )
-                                                        })
-                                                        .collect()
-                                                }
-                                            },
-                                        ),
-                                    ),
-                            ),
-                    )
+                    .child(self.render_header(
+                        theme,
+                        has_available_tracks,
+                        current_track_in_album,
+                        is_playing,
+                    ))
                     .child({
                         let render_fn = self.track_listing.make_render_fn();
                         let what = self.track_listing.track_list_state().clone();
@@ -247,42 +321,7 @@ impl Render for ReleaseView {
                         self.release_info.is_some()
                             || self.album.release_date.is_some()
                             || self.album.isrc.is_some(),
-                        |this| {
-                            this.child(
-                                div()
-                                    .flex()
-                                    .flex_col()
-                                    .text_sm()
-                                    .ml(px(18.0))
-                                    .pt(px(12.0))
-                                    .pb(px(12.0))
-                                    .font_weight(FontWeight::SEMIBOLD)
-                                    .text_color(theme.text_secondary)
-                                    .when_some(self.release_info.clone(), |this, release_info| {
-                                        this.child(div().child(release_info))
-                                    })
-                                    .when_some(self.album.release_date.as_ref().zip(self.album.date_precision), |this, (date, precision)| {
-                                        match precision {
-                                            1 => {
-                                                if let Ok(nd) = chrono::NaiveDate::parse_from_str(date.0.as_str(), "%Y-%m-%d") {
-                                                    let dt = nd.and_hms_opt(0, 0, 0).unwrap();
-                                                    let utc = chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(dt, chrono::Utc);
-                                                    this.child(tr!("RELEASED_DATE", "Released {{date}}", date:date("YMD", length="long")=utc))
-                                                } else {
-                                                    this
-                                                }
-                                            }
-                                            0 => {
-                                                this.child(tr!("RELEASED_YEAR", "Released {{year}}", year=date.0.as_str()[..4]))
-                                            }
-                                            _ => this,
-                                        }
-                                    })
-                                    .when_some(self.album.isrc.as_ref(), |this, isrc| {
-                                        this.child(div().child(isrc.clone()))
-                                    }),
-                            )
-                        },
+                        |this| this.child(self.render_footer(theme)),
                     ),
             )
             .child(floating_scrollbar(
