@@ -22,6 +22,7 @@ pub struct Discord {
     last_position: u64,
     last_duration: Option<u64>,
     last_state: PlaybackState,
+    stage: u8,
     client: DiscordIpcClient,
 }
 
@@ -37,6 +38,7 @@ impl Discord {
             last_position: 0,
             last_duration: None,
             last_state: PlaybackState::Stopped,
+            stage: 0,
             client,
         }
     }
@@ -99,14 +101,16 @@ impl MediaMetadataBroadcastService for Discord {
         self.last_duration = None;
         self.last_position = 0;
         self.last_path = Some(file_path.clone());
+        self.stage = 1;
 
         self.client.clear_activity().ok();
     }
 
     async fn metadata_recieved(&mut self, info: Arc<Metadata>) {
         self.metadata = Some(info.clone());
+        self.stage += 1;
 
-        if self.last_state == PlaybackState::Playing {
+        if self.last_state == PlaybackState::Playing && self.stage == 3 {
             self.update_activity();
         }
     }
@@ -134,7 +138,9 @@ impl MediaMetadataBroadcastService for Discord {
         let last_position = self.last_position;
         self.last_position = position;
 
-        if position > last_position + 1 || position < last_position {
+        if (position > last_position + 1 || position < last_position)
+            && self.last_state == PlaybackState::Playing
+        {
             // we scrubbed, discord needs new timestamps
             self.update_activity();
         }
@@ -142,12 +148,16 @@ impl MediaMetadataBroadcastService for Discord {
 
     async fn duration_changed(&mut self, duration: u64) {
         self.last_duration = Some(duration);
+        self.stage += 1;
         self.start_time = Some(
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap()
                 .as_secs(),
         );
-        self.update_activity();
+
+        if self.last_state == PlaybackState::Playing && self.stage == 3 {
+            self.update_activity();
+        }
     }
 }
