@@ -860,7 +860,11 @@ impl Render for SecondaryControls {
                                 }),
                         )
                         .on_scroll_wheel(move |ev, _, cx| {
-                            let delta: f64 = ev.delta.pixel_delta(px(0.01666666)).y.into();
+                            let delta: f64 = if ev.delta.precise() {
+                                f64::from(ev.delta.pixel_delta(px(1.0)).y) * 0.01666666
+                            } else {
+                                ev.delta.pixel_delta(px(0.01666666)).y.into()
+                            };
                             cx.global::<PlaybackInterface>().set_volume(f64::clamp(
                                 volume + delta,
                                 0_f64,
