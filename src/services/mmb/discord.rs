@@ -9,6 +9,7 @@ use discord_rich_presence::{
     DiscordIpc, DiscordIpcClient,
     activity::{Activity, Assets, StatusDisplayType, Timestamps},
 };
+use tracing::warn;
 
 use crate::{
     media::metadata::Metadata, playback::thread::PlaybackState,
@@ -89,7 +90,9 @@ impl Discord {
             assets = assets.large_text(album.clone());
         }
 
-        self.client.set_activity(activity.assets(assets)).ok();
+        if let Err(e) = self.client.set_activity(activity.assets(assets)) {
+            warn!("Failed to set activity: {:?}", e);
+        }
     }
 
     pub fn update_start_time(&mut self) {
