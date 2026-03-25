@@ -18,6 +18,7 @@ design standard.
 - Desktop integration
 - Playlists
 - Lyrics
+- Discord RPC
 
 ## Planned Features
 - WASM Extension support:
