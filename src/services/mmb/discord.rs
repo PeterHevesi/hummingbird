@@ -7,7 +7,7 @@ use std::{
 use async_trait::async_trait;
 use discord_rich_presence::{
     DiscordIpc, DiscordIpcClient,
-    activity::{Activity, Assets, Timestamps},
+    activity::{Activity, Assets, StatusDisplayType, Timestamps},
 };
 
 use crate::{
@@ -56,7 +56,7 @@ impl Discord {
             } else {
                 "by Unknown Artist".to_string()
             })
-            .assets(Assets::new().large_image("logo"))
+            .status_display_type(StatusDisplayType::Details)
             .name("Hummingbird");
 
         if let Some(start_time) = self.start_time
@@ -71,13 +71,21 @@ impl Discord {
             );
         }
 
+        let mut assets = Assets::new();
+
         if let Some(mbid_album) = &info.mbid_album {
             let url = format!("https://coverartarchive.org/release/{mbid_album}/front-500");
 
-            activity = activity.assets(Assets::new().large_image(url));
+            assets = assets.large_image(url);
+        } else {
+            assets = assets.large_image("logo");
         }
 
-        self.client.set_activity(activity).ok();
+        if let Some(album) = &info.album {
+            assets = assets.large_text(album.clone());
+        }
+
+        self.client.set_activity(activity.assets(assets)).ok();
     }
 }
 
