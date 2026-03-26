@@ -95,12 +95,21 @@ jobs:
           xcrun stapler staple "target/bundle/${{ env.TARGET_TRIPLE }}/release-distro/Hummingbird.app"
       - name: Make DMG
         run: cargo cntp-deploy --no-open --verbose --output-file "hummingbird-$ARCH.dmg" --profile release-distro
+      - name: Make Zip
+        run: |
+          zip -r hummingbird-$ARCH.zip target/bundle/${{ env.TARGET_TRIPLE }}/release-distro/Hummingbird.app
       - uses: actions/upload-artifact@v4
         with:
           name: hummingbird-${{ env.ARCH }}.dmg
           path: hummingbird-${{ env.ARCH }}.dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hummingbird-${{ env.ARCH }}.zip
+          path: hummingbird-${{ env.ARCH }}.zip
       - uses: softprops/action-gh-release@v2
         with:
-          files: hummingbird-${{ env.ARCH }}.dmg
+          files: |
+            hummingbird-${{ env.ARCH }}.dmg
+            hummingbird-${{ env.ARCH }}.zip
           name: ${{ github.event.release.name }}
           tag_name: ${{ github.event.release.tag_name }}
