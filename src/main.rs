@@ -18,6 +18,8 @@ mod services;
 mod settings;
 mod ui;
 mod util;
+#[cfg(target_os = "windows")]
+mod windows;
 
 const VERSION_STRING: &str = env!("HUMMINGBIRD_VERSION_STRING");
 
@@ -30,6 +32,9 @@ static RUNTIME: LazyLock<tokio::runtime::Runtime> = LazyLock::new(|| {
 });
 
 fn main() -> anyhow::Result<()> {
+    #[cfg(target_os = "windows")]
+    windows::init()?;
+
     I18N_MANAGER.write().unwrap().load_source(tr_load!());
     crate::logging::init()?;
 

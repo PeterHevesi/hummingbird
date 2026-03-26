@@ -29,8 +29,11 @@ jobs:
         run: choco upgrade innosetup -y
       - name: Install minisign
         run: |
-          winget install minisign --accept-package-agreements --accept-source-agreements --disable-interactivity
-          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+          Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+          Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+          scoop install minisign
+      - name: Try minisign
+        run: minisign -v
       - name: Update rust
         run: rustup update
       - name: Set ENV
