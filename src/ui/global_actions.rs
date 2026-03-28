@@ -9,7 +9,7 @@ use crate::{
         command_palette::OpenPalette,
         components::menus_builder::{MenuBuilder, MenusBuilder, menu_item, menu_separator},
         settings::open_settings_window,
-        troubleshooting::open_log,
+        troubleshooting::{CopyTroubleshootingInfo, OpenLog, copy_troubleshooting_info, open_log},
     },
 };
 
@@ -40,6 +40,7 @@ pub fn register_actions(cx: &mut App) {
     cx.on_action(shuffle_all);
     cx.on_action(scan);
     cx.on_action(open_log);
+    cx.on_action(copy_troubleshooting_info);
 
     debug!("actions: {:?}", cx.all_action_names());
     debug!("action available: {:?}", cx.is_action_available(&Quit));
@@ -136,6 +137,13 @@ pub fn register_actions(cx: &mut App) {
                     Discord,
                     false,
                 ))
+                .add_item(menu_separator(false))
+                .add_item(menu_item(
+                    tr!("ACTION_COPY_TROUBLESHOOTING_INFO"),
+                    CopyTroubleshootingInfo,
+                    false,
+                ))
+                .add_item(menu_item(tr!("ACTION_OPEN_LOG"), OpenLog, false))
                 .add_item(menu_separator(false))
                 .add_item(menu_item(
                     tr!("PATREON", "Support us on Patreon"),

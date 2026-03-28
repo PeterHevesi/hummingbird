@@ -31,7 +31,8 @@ body:
     attributes:
       label: Environment and Hardware
       description: |
-        Open the command palette and run "Hummingbird: Copy Troubleshooting Info" to copy version and system information to your clipboard. Paste it here.
+        Click Help -> Copy Troubleshooting Info in the menu bar or run "Hummingbird: Copy Troubleshooting Info" in the command palette
+        to copy version and system information to your clipboard. Paste it here.
       placeholder: |
         <!-- Paste the output from "Hummingbird: Copy Troubleshooting Info" here -->
     validations:
@@ -40,8 +41,8 @@ body:
     attributes:
       label: Logs
       description: |
-        If applicable, paste any relevant log output. Open the command palette and run "Hummingbird: Open Log" to open the log file.
-        Please review logs for any sensitive information and redact them before posting.
+        If applicable, paste any relevant log output. Click Help -> Open Log in the menu bar or run "Hummingbird: Open Log" in the
+        command palette to open the log file. Please review logs for any sensitive information and redact them before posting.
       value: |
         <details><summary>Logs</summary>
 

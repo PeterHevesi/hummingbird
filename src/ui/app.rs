@@ -4,7 +4,6 @@ use std::{
 };
 
 use cntp_i18n::{I18N_MANAGER, Locale, tr};
-use directories::ProjectDirs;
 use gpui::*;
 use gpui_platform::current_platform;
 use prelude::FluentBuilder;
@@ -48,7 +47,6 @@ use super::{
     right_sidebar::RightSidebar,
     search::SearchView,
     theme::setup_theme,
-    troubleshooting::{self, CopyTroubleshootingInfo},
     util::drop_image_from_app,
 };
 
@@ -82,9 +80,6 @@ impl Render for WindowShadow {
             .image_cache(self.image_cache.clone())
             .key_context("app")
             .size_full()
-            .on_action(cx.listener(|_, _: &CopyTroubleshootingInfo, window, cx| {
-                troubleshooting::copy_troubleshooting_info(window, cx);
-            }))
             .child(window_chrome(
                 div()
                     .cursor(CursorStyle::Arrow)

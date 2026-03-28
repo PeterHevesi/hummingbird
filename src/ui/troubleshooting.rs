@@ -1,9 +1,28 @@
-use gpui::{App, ClipboardItem, Window, actions};
+use gpui::{App, AppContext, ClipboardItem, Window, actions};
 use sysinfo::{CpuRefreshKind, MemoryRefreshKind, RefreshKind, System};
 
 actions!(hummingbird, [CopyTroubleshootingInfo, OpenLog]);
 
-pub fn copy_troubleshooting_info(_window: &Window, cx: &mut App) {
+pub fn copy_troubleshooting_info(_: &CopyTroubleshootingInfo, cx: &mut App) {
+    cx.defer(|cx| {
+        let windows = cx.windows();
+
+        if let Some(window) = windows.first() {
+            if cx
+                .update_window(*window, |_, window, cx| {
+                    copy_troubleshooting_info_inner(Some(window), cx);
+                })
+                .is_err()
+            {
+                copy_troubleshooting_info_inner(None, cx);
+            }
+        } else {
+            copy_troubleshooting_info_inner(None, cx);
+        }
+    });
+}
+
+fn copy_troubleshooting_info_inner(_window: Option<&mut Window>, cx: &mut App) {
     // GPUI only supports fetching GPU info on Linux
     #[cfg(target_os = "linux")]
     let info = {
@@ -15,8 +34,12 @@ pub fn copy_troubleshooting_info(_window: &Window, cx: &mut App) {
             cpu_label(),
             formatted_total_memory(),
         );
-        info.push_str("\nGPU: ");
-        info.push_str(&gpu_label(_window));
+
+        if let Some(window) = _window {
+            info.push_str("\nGPU: ");
+            info.push_str(&gpu_label(window));
+        }
+
         info
     };
 

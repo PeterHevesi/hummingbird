@@ -39,10 +39,9 @@ fn log_dir_in(dirs: &ProjectDirs, override_dir: Option<&OsStr>) -> PathBuf {
 fn default_log_dir(dirs: &ProjectDirs) -> PathBuf {
     #[cfg(target_os = "linux")]
     {
-        return dirs
-            .state_dir()
+        dirs.state_dir()
             .unwrap_or_else(|| dirs.data_local_dir())
-            .to_path_buf();
+            .to_path_buf()
     }
 
     #[cfg(not(target_os = "linux"))]
