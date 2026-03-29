@@ -38,15 +38,16 @@ const PORTABLE_PLATFORM_PACKAGE: &str = if cfg!(target_arch = "aarch64") {
 pub fn start_update_task(cx: &mut App) {
     let update_model = cx.global::<Models>().pending_update.clone();
     let update_settings = cx.global::<SettingsGlobal>().model.read(cx).update.clone();
-    let package = if cfg!(target_os = "windows") {
+    #[cfg(target_os = "windows")]
+    let package = {
         if windows::used_installer().is_ok_and(|v| v) {
             PLATFORM_PACKAGE
         } else {
             PORTABLE_PLATFORM_PACKAGE
         }
-    } else {
-        PLATFORM_PACKAGE
     };
+    #[cfg(not(target_os = "windows"))]
+    let package = PLATFORM_PACKAGE;
 
     cx.spawn(async move |cx| {
         let update = crate::RUNTIME
