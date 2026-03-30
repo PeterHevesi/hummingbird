@@ -2,7 +2,7 @@ use gpui::{prelude::FluentBuilder, *};
 use smallvec::SmallVec;
 
 use crate::ui::{
-    components::icons::{CROSS, MAXIMIZE, MINUS, icon},
+    components::icons::{CROSS, MAXIMIZE, MINIMIZE, MINUS, icon},
     constants::APP_ROUNDING,
     theme::Theme,
 };
@@ -132,7 +132,7 @@ pub enum WindowButton {
 }
 
 impl RenderOnce for WindowButton {
-    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
+    fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let theme = cx.global::<Theme>();
 
         let (bg, hover, active) = if matches!(self, WindowButton::Close(_)) {
@@ -178,7 +178,13 @@ impl RenderOnce for WindowButton {
                 icon(match self {
                     WindowButton::Close(_) => CROSS,
                     WindowButton::Minimize => MINUS,
-                    WindowButton::Maximize => MAXIMIZE,
+                    WindowButton::Maximize => {
+                        if window.is_maximized() {
+                            MINIMIZE
+                        } else {
+                            MAXIMIZE
+                        }
+                    }
                 })
                 .size(px(14.0)),
             )
