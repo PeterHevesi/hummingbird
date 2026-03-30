@@ -4,9 +4,10 @@
     windows_subsystem = "windows"
 )]
 
-use std::{path::Path, sync::LazyLock};
-
 use cntp_i18n::{I18N_MANAGER, tr_load};
+#[cfg(not(target_os = "macos"))]
+use std::path::Path;
+use std::sync::LazyLock;
 
 mod devices;
 mod library;
@@ -16,6 +17,8 @@ mod paths;
 mod playback;
 mod services;
 mod settings;
+#[cfg(test)]
+mod test_support;
 mod ui;
 #[cfg(feature = "update")]
 mod update;
