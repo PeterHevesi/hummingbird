@@ -447,11 +447,12 @@ impl Render for PlaylistList {
             .min_h(px(0.0))
             .relative()
             .child(main)
-            .when(!collapsed, |this| this)
-            .child(floating_scrollbar(
-                "playlist_list_scrollbar",
-                scroll_handle,
-                RightPad::None,
-            ))
+            .when(!collapsed, |this| {
+                this.child(floating_scrollbar(
+                    "playlist_list_scrollbar",
+                    scroll_handle,
+                    RightPad::None,
+                ))
+            })
     }
 }

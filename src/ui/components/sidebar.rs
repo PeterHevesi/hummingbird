@@ -68,7 +68,7 @@ pub struct SidebarItem {
     active: bool,
     collapsed: bool,
     label: Option<SharedString>,
-    group_id: SharedString,
+    state_id: ElementId,
 }
 
 impl SidebarItem {
@@ -113,7 +113,8 @@ impl InteractiveElement for SidebarItem {
 }
 
 impl RenderOnce for SidebarItem {
-    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
+    fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
+        let state = window.use_keyed_state(self.state_id.clone(), cx, |_, _| false);
         let theme = cx.global::<Theme>();
 
         let item = self
@@ -181,15 +182,20 @@ impl RenderOnce for SidebarItem {
         if self.collapsed
             && let Some(label_text) = self.label
         {
-            let group_name = self.group_id;
+            let ref_hover = *state.read(cx);
 
-            deferred(
-                div()
-                    .relative()
-                    .id("with-label")
-                    .group(group_name.clone())
-                    .child(item)
-                    .child(
+            div()
+                .relative()
+                .id(self.state_id)
+                .child(item)
+                .on_hover({
+                    let state = state.clone();
+                    move |hover, _, cx| {
+                        state.write(cx, *hover);
+                    }
+                })
+                .when(ref_hover, |this| {
+                    this.child(deferred(
                         div()
                             .absolute()
                             .left_full()
@@ -206,12 +212,10 @@ impl RenderOnce for SidebarItem {
                             .text_sm()
                             .text_color(theme.text)
                             .whitespace_nowrap()
-                            .child(label_text)
-                            .invisible()
-                            .group_hover(group_name, |this| this.visible()),
-                    ),
-            )
-            .into_any_element()
+                            .child(label_text),
+                    ))
+                })
+                .into_any_element()
         } else {
             item.into_any_element()
         }
@@ -220,7 +224,7 @@ impl RenderOnce for SidebarItem {
 
 pub fn sidebar_item(id: impl Into<ElementId>) -> SidebarItem {
     let element_id = id.into();
-    let group_id = SharedString::from(format!("sb-hover-{element_id:?}"));
+    let state_id = (element_id.clone(), "id").into();
     SidebarItem {
         parent_div: div().id(element_id),
         children_div: div(),
@@ -228,7 +232,7 @@ pub fn sidebar_item(id: impl Into<ElementId>) -> SidebarItem {
         active: false,
         collapsed: false,
         label: None,
-        group_id,
+        state_id,
     }
 }
 
