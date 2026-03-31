@@ -13,6 +13,7 @@ use crate::{
                 REPEAT_ONCE, SHUFFLE, VOLUME, VOLUME_OFF, icon,
             },
             menu::{menu, menu_item},
+            tooltip::build_tooltip,
             volume_tooltip::build_volume_tooltip,
         },
         library::context_menus::{
@@ -472,7 +473,12 @@ impl Render for PlaybackSection {
                     })
                     .child(icon(SHUFFLE).size(px(14.0)).when(*shuffling, |this| {
                         this.text_color(theme.playback_button_toggled)
-                    })),
+                    }))
+                    .when_else(
+                        *shuffling,
+                        |this| this.tooltip(build_tooltip(tr!("STOP_SHUFFLING", "Stop Shuffling"))),
+                        |this| this.tooltip(build_tooltip(tr!("SHUFFLE"))),
+                    ),
             )
             .child(
                 div()
@@ -499,7 +505,8 @@ impl Render for PlaybackSection {
                             .on_click(|_, window, cx| {
                                 window.dispatch_action(Box::new(Previous), cx);
                             })
-                            .child(icon(PREV_TRACK).size(px(16.0))),
+                            .child(icon(PREV_TRACK).size(px(16.0)))
+                            .tooltip(build_tooltip(tr!("PREVIOUS_TRACK", "Previous Track"))),
                     )
                     .child(
                         div()
@@ -524,9 +531,11 @@ impl Render for PlaybackSection {
                             })
                             .when(*state == PlaybackState::Playing, |div| {
                                 div.child(icon(PAUSE).size(px(16.0)))
+                                    .tooltip(build_tooltip(tr!("PAUSE")))
                             })
                             .when(*state != PlaybackState::Playing, |div| {
                                 div.child(icon(PLAY).size(px(16.0)))
+                                    .tooltip(build_tooltip(tr!("PLAY")))
                             }),
                     )
                     .child(
@@ -548,7 +557,8 @@ impl Render for PlaybackSection {
                             .on_click(|_, window, cx| {
                                 window.dispatch_action(Box::new(Next), cx);
                             })
-                            .child(icon(NEXT_TRACK).size(px(16.0))),
+                            .child(icon(NEXT_TRACK).size(px(16.0)))
+                            .tooltip(build_tooltip(tr!("NEXT_TRACK", "Next Track"))),
                     ),
             )
             .child(
@@ -585,6 +595,19 @@ impl Render for PlaybackSection {
                                         .global::<PlaybackInterface>()
                                         .set_repeat(RepeatState::NotRepeating),
                                 })
+                                .tooltip(build_tooltip(match repeating {
+                                    RepeatState::NotRepeating => {
+                                        tr!("REPEAT")
+                                    }
+                                    RepeatState::Repeating => tr!("REPEAT_ONE"),
+                                    RepeatState::RepeatingOne => {
+                                        if always_repeat {
+                                            tr!("REPEAT")
+                                        } else {
+                                            tr!("STOP_REPEATING", "Stop Repeating")
+                                        }
+                                    }
+                                }))
                                 .child(
                                     icon(match repeating {
                                         RepeatState::NotRepeating | RepeatState::Repeating => {
@@ -875,12 +898,14 @@ impl Render for SecondaryControls {
                                 .on_click(move |_, _, cx| {
                                     cx.global::<PlaybackInterface>().set_volume(prev_volume);
                                 })
+                                .tooltip(build_tooltip(tr!("UNMUTE", "Unmute")))
                         })
                         .when(volume > 0.0, |div| {
                             div.child(icon(VOLUME).size(px(14.0)))
                                 .on_click(move |_, _, cx| {
                                     cx.global::<PlaybackInterface>().set_volume(0 as f64);
                                 })
+                                .tooltip(build_tooltip(tr!("MUTE", "Mute")))
                         }),
                 )
                 .child(
@@ -926,24 +951,24 @@ impl Render for SecondaryControls {
                         .bg(theme.border_color),
                 )
                 .child(
-                    sidebar_toggle_button("queue-button", MENU, queue_active).on_click(
-                        move |_, _, cx| {
+                    sidebar_toggle_button("queue-button", MENU, queue_active)
+                        .on_click(move |_, _, cx| {
                             show_queue.update(cx, |m, cx| {
                                 *m = !*m;
                                 cx.notify();
                             })
-                        },
-                    ),
+                        })
+                        .tooltip(build_tooltip(tr!("QUEUE_TITLE"))),
                 )
                 .child(
-                    sidebar_toggle_button("lyrics-button", MICROPHONE, lyrics_active).on_click(
-                        move |_, _, cx| {
+                    sidebar_toggle_button("lyrics-button", MICROPHONE, lyrics_active)
+                        .on_click(move |_, _, cx| {
                             show_lyrics.update(cx, |m, cx| {
                                 *m = !*m;
                                 cx.notify();
                             })
-                        },
-                    ),
+                        })
+                        .tooltip(build_tooltip(tr!("LYRICS", "Lyrics"))),
                 ),
         )
     }
