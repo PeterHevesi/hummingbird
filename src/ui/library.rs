@@ -328,41 +328,7 @@ impl Library {
             let switcher_model = cx.global::<Models>().switcher_model.clone();
             let scroll_state = ScrollStateStorage::default();
             let initial_message = switcher_model.read(cx).current();
-
-            let interface = &cx
-                .global::<crate::settings::SettingsGlobal>()
-                .model
-                .read(cx)
-                .interface;
-            let two_column = interface.two_column_library;
-            let remember = interface.remember_last_selection;
-
-            let restored_detail = if remember {
-                last_detail_model_for(&initial_message, cx)
-                    .and_then(|model| *model.read(cx))
-                    .map(|d| ViewSwitchMessage::from_last_detail(&d))
-            } else {
-                None
-            };
-
-            let (view, initial_left, initial_right) = if let Some(detail_msg) = &restored_detail {
-                if two_column {
-                    let left = make_view(&initial_message, cx, &switcher_model, &scroll_state);
-                    let right = make_view(detail_msg, cx, &switcher_model, &scroll_state);
-                    (left.clone(), Some(left), Some(right))
-                } else {
-                    // Single-column: auto-navigate to last selection
-                    switcher_model.update(cx, |history, cx| {
-                        history.navigate(*detail_msg);
-                        cx.notify();
-                    });
-                    let view = make_view(detail_msg, cx, &switcher_model, &scroll_state);
-                    (view, None, None)
-                }
-            } else {
-                let view = make_view(&initial_message, cx, &switcher_model, &scroll_state);
-                (view, None, None)
-            };
+            let view = make_view(&initial_message, cx, &switcher_model, &scroll_state);
 
             cx.subscribe(
                 &switcher_model,
@@ -553,8 +519,8 @@ impl Library {
                 navigation_view: NavigationView::new(cx, switcher_model.clone()),
                 sidebar: Sidebar::new(cx, switcher_model.clone()),
                 view,
-                left_view: initial_left,
-                right_view: initial_right,
+                left_view: None,
+                right_view: None,
                 update_playlist: UpdatePlaylist::new(cx, show_update_playlist.clone()),
                 show_update_playlist,
                 focus_handle,

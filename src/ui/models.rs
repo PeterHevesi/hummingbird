@@ -355,8 +355,8 @@ pub fn build_models(
         }
     });
 
-    let last_albums_detail = cx.new(|_| storage_data.last_albums_detail);
-    let last_artists_detail = cx.new(|_| storage_data.last_artists_detail);
+    let last_albums_detail = cx.new(|_| None);
+    let last_artists_detail = cx.new(|_| None);
 
     #[cfg(feature = "update")]
     let pending_update = cx.new(|_| None);
