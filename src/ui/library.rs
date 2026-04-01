@@ -408,8 +408,13 @@ impl Library {
 
                     let current_msg = m.read(cx).current();
 
-                    // Save last selection per view when navigating to a detail page
-                    if remember && current_msg.is_detail_page() {
+                    let is_explicit_nav = !matches!(
+                        message,
+                        ViewSwitchMessage::Back | ViewSwitchMessage::Forward | ViewSwitchMessage::Refresh
+                    );
+
+                    // Save last selection per view when explicitly navigating to a detail page
+                    if remember && is_explicit_nav && current_msg.is_detail_page() {
                         // Determine which key page owns this detail
                         let owner_key = if two_column {
                             // In two-column mode, the left pane tells us which view we're in
