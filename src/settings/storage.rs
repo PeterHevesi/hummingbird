@@ -88,6 +88,12 @@ pub struct StorageData {
     /// Fraction (0..1) of the lyrics panel height
     #[serde(default = "default_lyrics_fraction")]
     pub lyrics_fraction: f32,
+    /// Last selected album ID in Albums view (for "remember last selection")
+    #[serde(default)]
+    pub last_album_id: Option<i64>,
+    /// Last selected artist ID in Artists view (for "remember last selection")
+    #[serde(default)]
+    pub last_artist_id: Option<i64>,
 }
 
 impl StorageData {
@@ -120,6 +126,8 @@ impl Default for StorageData {
             liked_tracks_sort_method: default_liked_tracks_sort_method(),
             sidebar_collapsed: false,
             lyrics_fraction: f32::from(DEFAULT_LYRICS_FRACTION),
+            last_album_id: None,
+            last_artist_id: None,
         }
     }
 }
@@ -241,6 +249,8 @@ mod tests {
             liked_tracks_sort_method: LikedTrackSortMethod::RecentlyAddedAsc,
             sidebar_collapsed: true,
             lyrics_fraction: 0.7,
+            last_album_id: Some(42),
+            last_artist_id: Some(7),
         };
 
         let storage = Storage::new(path);
@@ -261,6 +271,8 @@ mod tests {
         );
         assert_eq!(loaded.sidebar_collapsed, expected.sidebar_collapsed);
         assert_eq!(loaded.lyrics_fraction, expected.lyrics_fraction);
+        assert_eq!(loaded.last_album_id, expected.last_album_id);
+        assert_eq!(loaded.last_artist_id, expected.last_artist_id);
 
         let loaded_table = loaded.table_settings.get("tracks").unwrap();
         let expected_table = expected.table_settings.get("tracks").unwrap();
@@ -297,6 +309,8 @@ mod tests {
             liked_tracks_sort_method: LikedTrackSortMethod::TitleDesc,
             sidebar_collapsed: true,
             lyrics_fraction: 0.4,
+            last_album_id: None,
+            last_artist_id: None,
         };
 
         storage.save(&stored);

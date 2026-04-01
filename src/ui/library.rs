@@ -293,7 +293,64 @@ impl Library {
             let switcher_model = cx.global::<Models>().switcher_model.clone();
             let scroll_state = ScrollStateStorage::default();
             let initial_message = switcher_model.read(cx).current();
-            let view = make_view(&initial_message, cx, &switcher_model, &scroll_state);
+
+            let interface = &cx
+                .global::<crate::settings::SettingsGlobal>()
+                .model
+                .read(cx)
+                .interface;
+            let two_column = interface.two_column_library;
+            let remember = interface.remember_last_selection;
+
+            let (view, initial_left, initial_right) = if remember && two_column {
+                // Two-column with remember: set up both panes from the start
+                let restored_msg = match initial_message {
+                    ViewSwitchMessage::Albums => {
+                        cx.global::<Models>().last_album_id.read(cx)
+                            .map(|id| ViewSwitchMessage::Release(id, None))
+                    }
+                    ViewSwitchMessage::Artists => {
+                        cx.global::<Models>().last_artist_id.read(cx)
+                            .map(ViewSwitchMessage::Artist)
+                    }
+                    _ => None,
+                };
+
+                let left = make_view(&initial_message, cx, &switcher_model, &scroll_state);
+                let right = restored_msg
+                    .as_ref()
+                    .map(|msg| make_view(msg, cx, &switcher_model, &scroll_state));
+
+                (left.clone(), Some(left), right)
+            } else if remember && !two_column {
+                // Single-column with remember: auto-navigate to last selection
+                let restored_msg = match initial_message {
+                    ViewSwitchMessage::Albums => {
+                        cx.global::<Models>().last_album_id.read(cx)
+                            .map(|id| ViewSwitchMessage::Release(id, None))
+                    }
+                    ViewSwitchMessage::Artists => {
+                        cx.global::<Models>().last_artist_id.read(cx)
+                            .map(ViewSwitchMessage::Artist)
+                    }
+                    _ => None,
+                };
+
+                if let Some(msg) = restored_msg {
+                    switcher_model.update(cx, |history, cx| {
+                        history.navigate(msg);
+                        cx.notify();
+                    });
+                    let view = make_view(&msg, cx, &switcher_model, &scroll_state);
+                    (view, None, None)
+                } else {
+                    let view = make_view(&initial_message, cx, &switcher_model, &scroll_state);
+                    (view, None, None)
+                }
+            } else {
+                let view = make_view(&initial_message, cx, &switcher_model, &scroll_state);
+                (view, None, None)
+            };
 
             cx.subscribe(
                 &switcher_model,
@@ -363,15 +420,32 @@ impl Library {
                         }
                     };
 
-                    let two_column = cx
+                    let interface = &cx
                         .global::<crate::settings::SettingsGlobal>()
                         .model
                         .read(cx)
-                        .interface
-                        .two_column_library;
+                        .interface;
+                    let two_column = interface.two_column_library;
+                    let remember = interface.remember_last_selection;
+
+                    let current_msg = m.read(cx).current();
+
+                    // Save last selection when navigating to a detail page
+                    if remember {
+                        match current_msg {
+                            ViewSwitchMessage::Release(id, _) => {
+                                let model = cx.global::<Models>().last_album_id.clone();
+                                model.update(cx, |v, _| *v = Some(id));
+                            }
+                            ViewSwitchMessage::Artist(id) => {
+                                let model = cx.global::<Models>().last_artist_id.clone();
+                                model.update(cx, |v, _| *v = Some(id));
+                            }
+                            _ => {}
+                        }
+                    }
 
                     if two_column {
-                        let current_msg = m.read(cx).current();
                         if current_msg.is_detail_page() {
                             this.right_view = Some(this.view.clone());
 
@@ -390,10 +464,54 @@ impl Library {
                                     .map(|lm| make_view(lm, cx, &m, &this.scroll_state));
                             }
                         } else {
-                            // Key page: show full-width in left pane, clear right
+                            // Key page: show in left pane
                             this.left_view = Some(this.view.clone());
-                            this.right_view = None;
+
+                            // Restore last selection for the right pane if available
+                            if remember {
+                                let restored_msg = match current_msg {
+                                    ViewSwitchMessage::Albums => {
+                                        cx.global::<Models>().last_album_id.read(cx)
+                                            .map(|id| ViewSwitchMessage::Release(id, None))
+                                    }
+                                    ViewSwitchMessage::Artists => {
+                                        cx.global::<Models>().last_artist_id.read(cx)
+                                            .map(ViewSwitchMessage::Artist)
+                                    }
+                                    _ => None,
+                                };
+
+                                this.right_view = restored_msg
+                                    .as_ref()
+                                    .map(|msg| make_view(msg, cx, &m, &this.scroll_state));
+                            } else {
+                                this.right_view = None;
+                            }
                         }
+                    } else if remember && !current_msg.is_detail_page() {
+                        // Single-column: auto-navigate to last selection
+                        let restored_msg = match current_msg {
+                            ViewSwitchMessage::Albums => {
+                                cx.global::<Models>().last_album_id.read(cx)
+                                    .map(|id| ViewSwitchMessage::Release(id, None))
+                            }
+                            ViewSwitchMessage::Artists => {
+                                cx.global::<Models>().last_artist_id.read(cx)
+                                    .map(ViewSwitchMessage::Artist)
+                            }
+                            _ => None,
+                        };
+
+                        if let Some(msg) = restored_msg {
+                            m.update(cx, |history, cx| {
+                                history.navigate(msg);
+                                cx.notify();
+                            });
+                            this.view = make_view(&msg, cx, &m, &this.scroll_state);
+                        }
+
+                        this.left_view = None;
+                        this.right_view = None;
                     } else {
                         this.left_view = None;
                         this.right_view = None;
@@ -433,8 +551,8 @@ impl Library {
                 navigation_view: NavigationView::new(cx, switcher_model.clone()),
                 sidebar: Sidebar::new(cx, switcher_model.clone()),
                 view,
-                left_view: None,
-                right_view: None,
+                left_view: initial_left,
+                right_view: initial_right,
                 update_playlist: UpdatePlaylist::new(cx, show_update_playlist.clone()),
                 show_update_playlist,
                 focus_handle,

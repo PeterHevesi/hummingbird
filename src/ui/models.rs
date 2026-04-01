@@ -72,6 +72,8 @@ pub struct Models {
     pub liked_tracks_sort_method: Entity<LikedTrackSortMethod>,
     pub sidebar_collapsed: Entity<bool>,
     pub lyrics_height: Entity<Pixels>,
+    pub last_album_id: Entity<Option<i64>>,
+    pub last_artist_id: Entity<Option<i64>>,
     #[cfg(feature = "update")]
     pub pending_update: Entity<Option<PathBuf>>,
 }
@@ -353,6 +355,9 @@ pub fn build_models(
         }
     });
 
+    let last_album_id: Entity<Option<i64>> = cx.new(|_| storage_data.last_album_id);
+    let last_artist_id: Entity<Option<i64>> = cx.new(|_| storage_data.last_artist_id);
+
     #[cfg(feature = "update")]
     let pending_update = cx.new(|_| None);
 
@@ -374,6 +379,8 @@ pub fn build_models(
         liked_tracks_sort_method,
         sidebar_collapsed,
         lyrics_height,
+        last_album_id,
+        last_artist_id,
         #[cfg(feature = "update")]
         pending_update,
     });

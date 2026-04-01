@@ -258,6 +258,27 @@ impl Render for InterfaceSettings {
             )
             .child(
                 label(
+                    "interface-remember-last-selection",
+                    tr!("INTERFACE_REMEMBER_LAST_SELECTION", "Remember last selection"),
+                )
+                .subtext(tr!(
+                    "INTERFACE_REMEMBER_LAST_SELECTION_SUBTEXT",
+                    "Remember the last opened album or artist in Albums and Artists views."
+                ))
+                .cursor_pointer()
+                .w_full()
+                .on_click(cx.listener(move |this, _, _, cx| {
+                    this.update_interface(cx, |interface| {
+                        interface.remember_last_selection = !interface.remember_last_selection;
+                    });
+                }))
+                .child(checkbox(
+                    "interface-remember-last-selection-check",
+                    interface.remember_last_selection,
+                )),
+            )
+            .child(
+                label(
                     "interface-full-width-library",
                     tr!("INTERFACE_GRID_MIN_ITEM_WIDTH", "Grid item width"),
                 )

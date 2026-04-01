@@ -337,6 +337,8 @@ pub fn run() -> anyhow::Result<()> {
                             let liked_tracks_sort_method =
                                 cx.global::<Models>().liked_tracks_sort_method.clone();
                             let sidebar_collapsed = cx.global::<Models>().sidebar_collapsed.clone();
+                            let last_album_id = cx.global::<Models>().last_album_id.clone();
+                            let last_artist_id = cx.global::<Models>().last_artist_id.clone();
                             move |_, cx| {
                                 let current_track = current_track.read(cx).clone();
                                 let volume = *volume.read(cx);
@@ -347,6 +349,8 @@ pub fn run() -> anyhow::Result<()> {
                                 let table_settings = table_settings.read(cx).clone();
                                 let liked_tracks_sort_method = *liked_tracks_sort_method.read(cx);
                                 let sidebar_collapsed = *sidebar_collapsed.read(cx);
+                                let last_album_id = *last_album_id.read(cx);
+                                let last_artist_id = *last_artist_id.read(cx);
                                 let storage = storage.clone();
                                 cx.background_executor().spawn(async move {
                                     storage.save(&StorageData {
@@ -359,6 +363,8 @@ pub fn run() -> anyhow::Result<()> {
                                         table_settings,
                                         liked_tracks_sort_method,
                                         sidebar_collapsed,
+                                        last_album_id,
+                                        last_artist_id,
                                     });
 
                                     crate::logging::flush();

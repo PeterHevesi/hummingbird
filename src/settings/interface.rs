@@ -37,6 +37,8 @@ pub struct InterfaceSettings {
     #[serde(default)]
     pub two_column_library: bool,
     #[serde(default)]
+    pub remember_last_selection: bool,
+    #[serde(default)]
     pub startup_library_view: StartupLibraryView,
     #[serde(default = "default_grid_min_item_width")]
     pub grid_min_item_width: f32,
@@ -61,6 +63,7 @@ impl Default for InterfaceSettings {
             theme: None,
             full_width_library: false,
             two_column_library: false,
+            remember_last_selection: false,
             startup_library_view: StartupLibraryView::default(),
             grid_min_item_width: DEFAULT_GRID_MIN_ITEM_WIDTH,
             always_show_scrollbars: false,
