@@ -64,6 +64,14 @@ pub struct TableSettings {
     pub view_mode: TableViewModeSetting,
 }
 
+/// A remembered detail-page selection for a library view.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum LastDetail {
+    Release { album_id: i64, track_id: Option<i64> },
+    Artist { artist_id: i64 },
+}
+
 /// Data to store while quitting the app
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StorageData {
@@ -88,12 +96,12 @@ pub struct StorageData {
     /// Fraction (0..1) of the lyrics panel height
     #[serde(default = "default_lyrics_fraction")]
     pub lyrics_fraction: f32,
-    /// Last selected album ID in Albums view (for "remember last selection")
+    /// Last detail page shown in Albums view
     #[serde(default)]
-    pub last_album_id: Option<i64>,
-    /// Last selected artist ID in Artists view (for "remember last selection")
+    pub last_albums_detail: Option<LastDetail>,
+    /// Last detail page shown in Artists view
     #[serde(default)]
-    pub last_artist_id: Option<i64>,
+    pub last_artists_detail: Option<LastDetail>,
 }
 
 impl StorageData {
@@ -126,8 +134,8 @@ impl Default for StorageData {
             liked_tracks_sort_method: default_liked_tracks_sort_method(),
             sidebar_collapsed: false,
             lyrics_fraction: f32::from(DEFAULT_LYRICS_FRACTION),
-            last_album_id: None,
-            last_artist_id: None,
+            last_albums_detail: None,
+            last_artists_detail: None,
         }
     }
 }
@@ -176,7 +184,7 @@ impl Storage {
 
 #[cfg(test)]
 mod tests {
-    use super::{Storage, StorageData, TableSettings, TableViewModeSetting};
+    use super::{LastDetail, Storage, StorageData, TableSettings, TableViewModeSetting};
     use crate::{
         library::db::LikedTrackSortMethod, test_support::TestDir, ui::models::CurrentTrack,
     };
@@ -249,8 +257,8 @@ mod tests {
             liked_tracks_sort_method: LikedTrackSortMethod::RecentlyAddedAsc,
             sidebar_collapsed: true,
             lyrics_fraction: 0.7,
-            last_album_id: Some(42),
-            last_artist_id: Some(7),
+            last_albums_detail: Some(LastDetail::Release { album_id: 42, track_id: None }),
+            last_artists_detail: Some(LastDetail::Artist { artist_id: 7 }),
         };
 
         let storage = Storage::new(path);
@@ -271,8 +279,8 @@ mod tests {
         );
         assert_eq!(loaded.sidebar_collapsed, expected.sidebar_collapsed);
         assert_eq!(loaded.lyrics_fraction, expected.lyrics_fraction);
-        assert_eq!(loaded.last_album_id, expected.last_album_id);
-        assert_eq!(loaded.last_artist_id, expected.last_artist_id);
+        assert_eq!(loaded.last_albums_detail, expected.last_albums_detail);
+        assert_eq!(loaded.last_artists_detail, expected.last_artists_detail);
 
         let loaded_table = loaded.table_settings.get("tracks").unwrap();
         let expected_table = expected.table_settings.get("tracks").unwrap();
@@ -309,8 +317,8 @@ mod tests {
             liked_tracks_sort_method: LikedTrackSortMethod::TitleDesc,
             sidebar_collapsed: true,
             lyrics_fraction: 0.4,
-            last_album_id: None,
-            last_artist_id: None,
+            last_albums_detail: None,
+            last_artists_detail: None,
         };
 
         storage.save(&stored);

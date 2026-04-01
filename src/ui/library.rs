@@ -16,7 +16,7 @@ struct ScrollStateStorage {
 }
 
 use crate::{
-    settings::storage::DEFAULT_SPLIT_FRACTION,
+    settings::storage::{DEFAULT_SPLIT_FRACTION, LastDetail},
     ui::{
         command_palette::{Command, CommandManager},
         components::{
@@ -250,6 +250,41 @@ impl ViewSwitchMessage {
                 | (LibraryView::Artists(_), ViewSwitchMessage::Artists)
         )
     }
+
+    fn to_last_detail(&self) -> Option<LastDetail> {
+        match *self {
+            ViewSwitchMessage::Release(album_id, track_id) => {
+                Some(LastDetail::Release { album_id, track_id })
+            }
+            ViewSwitchMessage::Artist(artist_id) => {
+                Some(LastDetail::Artist { artist_id })
+            }
+            _ => None,
+        }
+    }
+
+    fn from_last_detail(detail: &LastDetail) -> Self {
+        match *detail {
+            LastDetail::Release { album_id, track_id } => {
+                ViewSwitchMessage::Release(album_id, track_id)
+            }
+            LastDetail::Artist { artist_id } => {
+                ViewSwitchMessage::Artist(artist_id)
+            }
+        }
+    }
+}
+
+/// Returns the model for the remembered detail of a given key page, if applicable.
+fn last_detail_model_for(
+    key_page: &ViewSwitchMessage,
+    cx: &App,
+) -> Option<Entity<Option<LastDetail>>> {
+    match key_page {
+        ViewSwitchMessage::Albums => Some(cx.global::<Models>().last_albums_detail.clone()),
+        ViewSwitchMessage::Artists => Some(cx.global::<Models>().last_artists_detail.clone()),
+        _ => None,
+    }
 }
 
 fn make_view(
@@ -302,49 +337,26 @@ impl Library {
             let two_column = interface.two_column_library;
             let remember = interface.remember_last_selection;
 
-            let (view, initial_left, initial_right) = if remember && two_column {
-                // Two-column with remember: set up both panes from the start
-                let restored_msg = match initial_message {
-                    ViewSwitchMessage::Albums => {
-                        cx.global::<Models>().last_album_id.read(cx)
-                            .map(|id| ViewSwitchMessage::Release(id, None))
-                    }
-                    ViewSwitchMessage::Artists => {
-                        cx.global::<Models>().last_artist_id.read(cx)
-                            .map(ViewSwitchMessage::Artist)
-                    }
-                    _ => None,
-                };
+            let restored_detail = if remember {
+                last_detail_model_for(&initial_message, cx)
+                    .and_then(|model| *model.read(cx))
+                    .map(|d| ViewSwitchMessage::from_last_detail(&d))
+            } else {
+                None
+            };
 
-                let left = make_view(&initial_message, cx, &switcher_model, &scroll_state);
-                let right = restored_msg
-                    .as_ref()
-                    .map(|msg| make_view(msg, cx, &switcher_model, &scroll_state));
-
-                (left.clone(), Some(left), right)
-            } else if remember && !two_column {
-                // Single-column with remember: auto-navigate to last selection
-                let restored_msg = match initial_message {
-                    ViewSwitchMessage::Albums => {
-                        cx.global::<Models>().last_album_id.read(cx)
-                            .map(|id| ViewSwitchMessage::Release(id, None))
-                    }
-                    ViewSwitchMessage::Artists => {
-                        cx.global::<Models>().last_artist_id.read(cx)
-                            .map(ViewSwitchMessage::Artist)
-                    }
-                    _ => None,
-                };
-
-                if let Some(msg) = restored_msg {
+            let (view, initial_left, initial_right) = if let Some(detail_msg) = &restored_detail {
+                if two_column {
+                    let left = make_view(&initial_message, cx, &switcher_model, &scroll_state);
+                    let right = make_view(detail_msg, cx, &switcher_model, &scroll_state);
+                    (left.clone(), Some(left), Some(right))
+                } else {
+                    // Single-column: auto-navigate to last selection
                     switcher_model.update(cx, |history, cx| {
-                        history.navigate(msg);
+                        history.navigate(*detail_msg);
                         cx.notify();
                     });
-                    let view = make_view(&msg, cx, &switcher_model, &scroll_state);
-                    (view, None, None)
-                } else {
-                    let view = make_view(&initial_message, cx, &switcher_model, &scroll_state);
+                    let view = make_view(detail_msg, cx, &switcher_model, &scroll_state);
                     (view, None, None)
                 }
             } else {
@@ -430,18 +442,25 @@ impl Library {
 
                     let current_msg = m.read(cx).current();
 
-                    // Save last selection when navigating to a detail page
-                    if remember {
-                        match current_msg {
-                            ViewSwitchMessage::Release(id, _) => {
-                                let model = cx.global::<Models>().last_album_id.clone();
-                                model.update(cx, |v, _| *v = Some(id));
+                    // Save last selection per view when navigating to a detail page
+                    if remember && current_msg.is_detail_page() {
+                        // Determine which key page owns this detail
+                        let owner_key = if two_column {
+                            // In two-column mode, the left pane tells us which view we're in
+                            match &this.left_view {
+                                Some(LibraryView::Album(_)) => Some(ViewSwitchMessage::Albums),
+                                Some(LibraryView::Artists(_)) => Some(ViewSwitchMessage::Artists),
+                                _ => m.read(cx).last_matching(ViewSwitchMessage::is_key_page),
                             }
-                            ViewSwitchMessage::Artist(id) => {
-                                let model = cx.global::<Models>().last_artist_id.clone();
-                                model.update(cx, |v, _| *v = Some(id));
+                        } else {
+                            m.read(cx).last_matching(ViewSwitchMessage::is_key_page)
+                        };
+
+                        if let Some(key) = owner_key {
+                            if let Some(model) = last_detail_model_for(&key, cx) {
+                                let detail = current_msg.to_last_detail();
+                                model.update(cx, |v, _| *v = detail);
                             }
-                            _ => {}
                         }
                     }
 
@@ -453,7 +472,6 @@ impl Library {
 
                             let needs_new_left = match (&this.left_view, &left_msg) {
                                 (None, Some(_)) | (Some(_), None) => true,
-
                                 (Some(lv), Some(msg)) => !msg.library_view_matches(lv),
                                 (None, None) => false,
                             };
@@ -469,19 +487,11 @@ impl Library {
 
                             // Restore last selection for the right pane if available
                             if remember {
-                                let restored_msg = match current_msg {
-                                    ViewSwitchMessage::Albums => {
-                                        cx.global::<Models>().last_album_id.read(cx)
-                                            .map(|id| ViewSwitchMessage::Release(id, None))
-                                    }
-                                    ViewSwitchMessage::Artists => {
-                                        cx.global::<Models>().last_artist_id.read(cx)
-                                            .map(ViewSwitchMessage::Artist)
-                                    }
-                                    _ => None,
-                                };
+                                let restored = last_detail_model_for(&current_msg, cx)
+                                    .and_then(|model| *model.read(cx))
+                                    .map(|d| ViewSwitchMessage::from_last_detail(&d));
 
-                                this.right_view = restored_msg
+                                this.right_view = restored
                                     .as_ref()
                                     .map(|msg| make_view(msg, cx, &m, &this.scroll_state));
                             } else {
@@ -490,19 +500,11 @@ impl Library {
                         }
                     } else if remember && !current_msg.is_detail_page() {
                         // Single-column: auto-navigate to last selection
-                        let restored_msg = match current_msg {
-                            ViewSwitchMessage::Albums => {
-                                cx.global::<Models>().last_album_id.read(cx)
-                                    .map(|id| ViewSwitchMessage::Release(id, None))
-                            }
-                            ViewSwitchMessage::Artists => {
-                                cx.global::<Models>().last_artist_id.read(cx)
-                                    .map(ViewSwitchMessage::Artist)
-                            }
-                            _ => None,
-                        };
+                        let restored = last_detail_model_for(&current_msg, cx)
+                            .and_then(|model| *model.read(cx))
+                            .map(|d| ViewSwitchMessage::from_last_detail(&d));
 
-                        if let Some(msg) = restored_msg {
+                        if let Some(msg) = restored {
                             m.update(cx, |history, cx| {
                                 history.navigate(msg);
                                 cx.notify();
