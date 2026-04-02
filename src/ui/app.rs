@@ -366,7 +366,7 @@ pub fn run() -> anyhow::Result<()> {
                             let volume = cx.global::<PlaybackInfo>().volume.clone();
                             let sidebar_width = cx.global::<Models>().sidebar_width.clone();
                             let queue_width = cx.global::<Models>().queue_width.clone();
-                            let split_width = cx.global::<Models>().split_width.clone();
+                            let split_widths = cx.global::<Models>().split_widths.clone();
                             let lyrics_height = cx.global::<Models>().lyrics_height.clone();
                             let table_settings = cx.global::<Models>().table_settings.clone();
                             let liked_tracks_sort_method =
@@ -383,7 +383,15 @@ pub fn run() -> anyhow::Result<()> {
                                 let volume = *volume.read(cx);
                                 let sidebar_width: f32 = (*sidebar_width.read(cx)).into();
                                 let queue_width: f32 = (*queue_width.read(cx)).into();
-                                let split_fraction: f32 = (*split_width.read(cx)).into();
+                                let split_fractions: std::collections::HashMap<String, f32> =
+                                    split_widths
+                                        .iter()
+                                        .map(|(k, e)| (k.clone(), f32::from(*e.read(cx))))
+                                        .collect();
+                                let split_fraction: f32 = split_fractions
+                                    .get("albums")
+                                    .copied()
+                                    .unwrap_or(f32::from(crate::settings::storage::DEFAULT_SPLIT_FRACTION));
                                 let lyrics_fraction: f32 = (*lyrics_height.read(cx)).into();
                                 let table_settings = table_settings.read(cx).clone();
                                 let liked_tracks_sort_method = *liked_tracks_sort_method.read(cx);
@@ -402,6 +410,7 @@ pub fn run() -> anyhow::Result<()> {
                                         sidebar_width,
                                         queue_width,
                                         split_fraction,
+                                        split_fractions,
                                         lyrics_fraction,
                                         table_settings,
                                         liked_tracks_sort_method,
