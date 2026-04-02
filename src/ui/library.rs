@@ -89,6 +89,15 @@ impl NavigationHistory {
         self.cursor < self.history.len() - 1
     }
 
+    /// Returns the history entry immediately before the cursor, if any.
+    pub fn previous(&self) -> Option<ViewSwitchMessage> {
+        if self.cursor > 0 {
+            Some(self.history[self.cursor - 1])
+        } else {
+            None
+        }
+    }
+
     pub fn go_back(&mut self) -> Option<ViewSwitchMessage> {
         if self.can_go_back() {
             self.cursor -= 1;
@@ -646,8 +655,15 @@ impl Render for Library {
                 };
 
                 if let Some(dest) = parent {
+                    // If the previous history entry matches the parent, go back
+                    // instead of creating a new history entry.
+                    let msg = if switcher.read(cx).previous() == Some(dest) {
+                        ViewSwitchMessage::Back
+                    } else {
+                        dest
+                    };
                     switcher.update(cx, |_, cx| {
-                        cx.emit(dest);
+                        cx.emit(msg);
                     });
                 }
             }))
