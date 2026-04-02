@@ -121,6 +121,7 @@ impl Render for Controls {
 pub struct InfoSection {
     track_name: Option<SharedString>,
     artist_name: Option<SharedString>,
+    subtitle: Option<SharedString>,
     guest_artist: Option<SharedString>,
     performer: Option<SharedString>,
     remixer: Option<SharedString>,
@@ -157,6 +158,7 @@ impl InfoSection {
                     .clone()
                     .or(metadata.album_artist.clone())
                     .map(SharedString::from);
+                this.subtitle = metadata.subtitle.clone().map(SharedString::from);
                 this.guest_artist = metadata.guest_artist.clone().map(SharedString::from);
                 this.performer = metadata.performer.clone().map(SharedString::from);
                 this.remixer = metadata.remixer.clone().map(SharedString::from);
@@ -242,6 +244,7 @@ impl InfoSection {
             Self {
                 artist_name: None,
                 track_name: None,
+                subtitle: None,
                 guest_artist: None,
                 performer: None,
                 remixer: None,
@@ -419,6 +422,18 @@ impl Render for InfoSection {
                                                     }),
                                                 ),
                                         )
+                                        .when_some(self.subtitle.clone(), |this, name| {
+                                            this.child(
+                                                div()
+                                                    .id("info-section-subtitle")
+                                                    .flex_shrink_0()
+                                                    .text_color(theme.text_secondary)
+                                                    .child(format!("; {name}"))
+                                                    .tooltip(build_tooltip(
+                                                        tr!("SUBTITLE", "Subtitle"),
+                                                    )),
+                                            )
+                                        })
                                         .when_some(self.guest_artist.clone(), |this, name| {
                                             this.child(
                                                 div()

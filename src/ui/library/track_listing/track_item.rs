@@ -343,11 +343,11 @@ impl Render for TrackItem {
                                                 )
                                             })
                                             .when_some(
-                                                self.track.guest_artist.clone(),
+                                                self.track.subtitle.clone(),
                                                 |this, v| {
                                                     this.child(
                                                         div()
-                                                            .id("track-guest-artist")
+                                                            .id("track-subtitle")
                                                             .flex_shrink_0()
                                                             .child(format!(
                                                                 "{}{}",
@@ -356,6 +356,27 @@ impl Render for TrackItem {
                                                                 } else {
                                                                     ""
                                                                 },
+                                                                v.0
+                                                            ))
+                                                            .tooltip(build_tooltip(tr!(
+                                                                "SUBTITLE",
+                                                                "Subtitle"
+                                                            ))),
+                                                    )
+                                                },
+                                            )
+                                            .when_some(
+                                                self.track.guest_artist.clone(),
+                                                |this, v| {
+                                                    let has_prev = show_artist_name
+                                                        || self.track.subtitle.is_some();
+                                                    this.child(
+                                                        div()
+                                                            .id("track-guest-artist")
+                                                            .flex_shrink_0()
+                                                            .child(format!(
+                                                                "{}{}",
+                                                                if has_prev { "; " } else { "" },
                                                                 v.0
                                                             ))
                                                             .tooltip(build_tooltip(tr!(
@@ -368,22 +389,16 @@ impl Render for TrackItem {
                                             .when_some(
                                                 self.track.performer.clone(),
                                                 |this, v| {
+                                                    let has_prev = show_artist_name
+                                                        || self.track.subtitle.is_some()
+                                                        || self.track.guest_artist.is_some();
                                                     this.child(
                                                         div()
                                                             .id("track-performer")
                                                             .flex_shrink_0()
                                                             .child(format!(
                                                                 "{}{}",
-                                                                if show_artist_name
-                                                                    || self
-                                                                        .track
-                                                                        .guest_artist
-                                                                        .is_some()
-                                                                {
-                                                                    "; "
-                                                                } else {
-                                                                    ""
-                                                                },
+                                                                if has_prev { "; " } else { "" },
                                                                 v.0
                                                             ))
                                                             .tooltip(build_tooltip(tr!(
@@ -396,26 +411,17 @@ impl Render for TrackItem {
                                             .when_some(
                                                 self.track.remixer.clone(),
                                                 |this, v| {
+                                                    let has_prev = show_artist_name
+                                                        || self.track.subtitle.is_some()
+                                                        || self.track.guest_artist.is_some()
+                                                        || self.track.performer.is_some();
                                                     this.child(
                                                         div()
                                                             .id("track-remixer")
                                                             .flex_shrink_0()
                                                             .child(format!(
                                                                 "{}{}",
-                                                                if show_artist_name
-                                                                    || self
-                                                                        .track
-                                                                        .guest_artist
-                                                                        .is_some()
-                                                                    || self
-                                                                        .track
-                                                                        .performer
-                                                                        .is_some()
-                                                                {
-                                                                    "; "
-                                                                } else {
-                                                                    ""
-                                                                },
+                                                                if has_prev { "; " } else { "" },
                                                                 v.0
                                                             ))
                                                             .tooltip(build_tooltip(tr!(

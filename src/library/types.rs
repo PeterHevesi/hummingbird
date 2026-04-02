@@ -241,6 +241,8 @@ pub struct Track {
     pub location: PathBuf,
     pub artist_names: Option<DBString>,
     #[sqlx(default)]
+    pub subtitle: Option<DBString>,
+    #[sqlx(default)]
     pub guest_artist: Option<DBString>,
     #[sqlx(default)]
     pub performer: Option<DBString>,

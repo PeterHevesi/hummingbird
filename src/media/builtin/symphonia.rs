@@ -225,6 +225,9 @@ impl SymphoniaStream {
                 Some(StandardTagKey::OriginalArtist) => {
                     self.current_metadata.original_artist = Some(tag.value.to_string())
                 }
+                Some(StandardTagKey::TrackSubtitle) => {
+                    self.current_metadata.subtitle = Some(tag.value.to_string())
+                }
                 Some(StandardTagKey::Performer) => {
                     self.current_metadata.performer = Some(tag.value.to_string())
                 }

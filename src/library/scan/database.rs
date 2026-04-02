@@ -267,6 +267,7 @@ async fn insert_track(
             .bind(metadata.replaygain_album_gain)
             .bind(metadata.replaygain_album_peak)
             .bind(&metadata.disc_subtitle)
+            .bind(&metadata.subtitle)
             .bind(&metadata.guest_artist)
             .bind(&metadata.performer)
             .bind(&metadata.remixer)

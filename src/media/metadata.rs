@@ -7,6 +7,7 @@ pub struct Metadata {
     pub album_artist: Option<String>,
     pub artist_sort: Option<String>,
     pub original_artist: Option<String>,
+    pub subtitle: Option<String>,
     pub guest_artist: Option<String>,
     pub performer: Option<String>,
     pub remixer: Option<String>,
