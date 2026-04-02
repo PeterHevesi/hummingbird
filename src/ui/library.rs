@@ -461,8 +461,12 @@ impl Library {
             )
             .detach();
 
-            let split_width_entities: Vec<Entity<Pixels>> =
-                cx.global::<Models>().split_widths.values().cloned().collect();
+            let split_width_entities: Vec<Entity<Pixels>> = cx
+                .global::<Models>()
+                .split_widths
+                .values()
+                .cloned()
+                .collect();
             for sw in split_width_entities {
                 cx.observe(&sw, |_, _, cx| cx.notify()).detach();
             }

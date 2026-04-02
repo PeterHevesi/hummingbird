@@ -30,8 +30,8 @@ use crate::{
         SettingsGlobal,
         interface::StartupLibraryView,
         storage::{
-            DEFAULT_LYRICS_FRACTION, DEFAULT_QUEUE_WIDTH, DEFAULT_SIDEBAR_WIDTH,
-            StorageData, TableSettings,
+            DEFAULT_LYRICS_FRACTION, DEFAULT_QUEUE_WIDTH, DEFAULT_SIDEBAR_WIDTH, StorageData,
+            TableSettings,
         },
     },
     ui::{data::Decode, library::ViewSwitchMessage},
@@ -345,7 +345,8 @@ pub fn build_models(
     });
     let split_widths: std::collections::HashMap<String, Entity<Pixels>> = {
         use crate::settings::storage::SPLIT_FRACTION_KEYS;
-        SPLIT_FRACTION_KEYS.iter()
+        SPLIT_FRACTION_KEYS
+            .iter()
             .map(|key| {
                 let value = cx.new(|_| storage_data.split_fraction_for(key));
                 (key.to_string(), value)

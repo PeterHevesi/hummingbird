@@ -132,13 +132,12 @@ impl StorageData {
     }
 
     /// Return the split fraction for a specific view key (e.g. "albums").
-    /// Falls back to the legacy `split_fraction` field, then to the compiled
-    /// default.
+    /// Falls back to the legacy `split_fraction` field, then to the compiled default.
     pub fn split_fraction_for(&self, key: &str) -> Pixels {
-        if let Some(&f) = self.split_fractions.get(key) {
-            if f > 0.0 {
-                return px(f);
-            }
+        if let Some(&f) = self.split_fractions.get(key)
+            && f > 0.0
+        {
+            return px(f);
         }
         // Legacy / migration path
         if self.split_fraction > 0.0 {
@@ -368,9 +367,7 @@ mod tests {
             sidebar_width: 280.0,
             queue_width: 350.0,
             split_fraction: 0.55,
-            split_fractions: HashMap::from([
-                ("artists".to_string(), 0.60),
-            ]),
+            split_fractions: HashMap::from([("artists".to_string(), 0.60)]),
             table_settings,
             liked_tracks_sort_method: LikedTrackSortMethod::TitleDesc,
             sidebar_collapsed: true,

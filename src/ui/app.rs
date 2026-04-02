@@ -330,9 +330,7 @@ pub fn run() -> anyhow::Result<()> {
 
                     cx.set_global(CommandPaletteHolder::new(palette.clone()));
 
-                    // Register quit handler directly on App (not on a Context<T>)
-                    // to avoid the weak entity reference that silently fails when
-                    // the window entity is released before shutdown runs.
+                    // Update `StorageData` and save it to file system while quitting the app
                     cx.on_app_quit({
                         let current_track = cx.global::<PlaybackInfo>().current_track.clone();
                         let volume = cx.global::<PlaybackInfo>().volume.clone();
@@ -344,12 +342,10 @@ pub fn run() -> anyhow::Result<()> {
                         let liked_tracks_sort_method =
                             cx.global::<Models>().liked_tracks_sort_method.clone();
                         let sidebar_collapsed = cx.global::<Models>().sidebar_collapsed.clone();
-                        let controls_left_width =
-                            cx.global::<Models>().controls_left_width.clone();
+                        let controls_left_width = cx.global::<Models>().controls_left_width.clone();
                         let controls_right_width =
                             cx.global::<Models>().controls_right_width.clone();
-                        let window_information =
-                            cx.global::<Models>().window_information.clone();
+                        let window_information = cx.global::<Models>().window_information.clone();
                         move |cx| {
                             let current_track = current_track.read(cx).clone();
                             let volume = *volume.read(cx);
@@ -360,18 +356,16 @@ pub fn run() -> anyhow::Result<()> {
                                     .iter()
                                     .map(|(k, e)| (k.clone(), f32::from(*e.read(cx))))
                                     .collect();
-                            let split_fraction: f32 = split_fractions
-                                .get("albums")
-                                .copied()
-                                .unwrap_or(f32::from(crate::settings::storage::DEFAULT_SPLIT_FRACTION));
+                            let split_fraction: f32 =
+                                split_fractions.get("albums").copied().unwrap_or(f32::from(
+                                    crate::settings::storage::DEFAULT_SPLIT_FRACTION,
+                                ));
                             let lyrics_fraction: f32 = (*lyrics_height.read(cx)).into();
                             let table_settings = table_settings.read(cx).clone();
                             let liked_tracks_sort_method = *liked_tracks_sort_method.read(cx);
                             let sidebar_collapsed = *sidebar_collapsed.read(cx);
-                            let controls_left_width: f32 =
-                                (*controls_left_width.read(cx)).into();
-                            let controls_right_width: f32 =
-                                (*controls_right_width.read(cx)).into();
+                            let controls_left_width: f32 = (*controls_left_width.read(cx)).into();
+                            let controls_right_width: f32 = (*controls_right_width.read(cx)).into();
                             let window_information = window_information.read(cx).clone();
 
                             let storage = storage.clone();
