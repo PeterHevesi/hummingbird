@@ -16,6 +16,7 @@ struct ScrollStateStorage {
 }
 
 use crate::{
+    library::db::LibraryAccess,
     settings::storage::DEFAULT_SPLIT_FRACTION,
     ui::{
         command_palette::{Command, CommandManager},
@@ -189,6 +190,34 @@ impl Default for NavigationHistory {
 
 impl EventEmitter<ViewSwitchMessage> for NavigationHistory {}
 
+/// Tracks which top-level section the user is currently in so that
+/// context-dependent actions (like "go up") can behave correctly.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum LibrarySection {
+    Albums,
+    Artists,
+    Tracks,
+    Playlists,
+}
+
+impl LibrarySection {
+    /// Derive the section from a navigation message. Returns `None` for
+    /// ambiguous messages (e.g. `Release`) that should keep the current section.
+    fn from_message(msg: &ViewSwitchMessage) -> Option<Self> {
+        match msg {
+            ViewSwitchMessage::Albums => Some(Self::Albums),
+            ViewSwitchMessage::Tracks => Some(Self::Tracks),
+            ViewSwitchMessage::Artists | ViewSwitchMessage::Artist(_) => Some(Self::Artists),
+            ViewSwitchMessage::Playlist(_) => Some(Self::Playlists),
+            // Release can appear under Albums or Artists – keep current section.
+            ViewSwitchMessage::Release(_, _) => None,
+            ViewSwitchMessage::Back
+            | ViewSwitchMessage::Forward
+            | ViewSwitchMessage::Refresh => None,
+        }
+    }
+}
+
 #[derive(Clone)]
 enum LibraryView {
     Album(Entity<AlbumView>),
@@ -203,6 +232,7 @@ pub struct Library {
     view: LibraryView,
     left_view: Option<LibraryView>,
     right_view: Option<LibraryView>,
+    section: LibrarySection,
     navigation_view: Entity<NavigationView>,
     sidebar: Entity<Sidebar>,
     show_update_playlist: Entity<bool>,
@@ -296,6 +326,8 @@ impl Library {
             let scroll_state = ScrollStateStorage::default();
             let initial_message = switcher_model.read(cx).current();
             let view = make_view(&initial_message, cx, &switcher_model, &scroll_state);
+            let section = LibrarySection::from_message(&initial_message)
+                .unwrap_or(LibrarySection::Albums);
 
             cx.subscribe(
                 &switcher_model,
@@ -328,6 +360,9 @@ impl Library {
 
                             if let Some(dest) = destination {
                                 debug!("back → {:?}", dest);
+                                if let Some(s) = LibrarySection::from_message(&dest) {
+                                    this.section = s;
+                                }
                                 make_view(&dest, cx, &m, &this.scroll_state)
                             } else {
                                 this.view.clone()
@@ -344,6 +379,9 @@ impl Library {
 
                             if let Some(dest) = destination {
                                 debug!("forward → {:?}", dest);
+                                if let Some(s) = LibrarySection::from_message(&dest) {
+                                    this.section = s;
+                                }
                                 make_view(&dest, cx, &m, &this.scroll_state)
                             } else {
                                 this.view.clone()
@@ -356,6 +394,10 @@ impl Library {
                         }
 
                         _ => {
+                            if let Some(s) = LibrarySection::from_message(message) {
+                                this.section = s;
+                            }
+
                             m.update(cx, |history, cx| {
                                 history.navigate(*message);
                                 cx.notify();
@@ -437,6 +479,7 @@ impl Library {
                 view,
                 left_view: None,
                 right_view: None,
+                section,
                 update_playlist: UpdatePlaylist::new(cx, show_update_playlist.clone()),
                 show_update_playlist,
                 focus_handle,
@@ -559,10 +602,27 @@ impl Render for Library {
             .track_focus(&self.focus_handle)
             .key_context("Library")
             .on_action(cx.listener(|this, _: &EscapeBack, _, cx| {
-                if matches!(this.view, LibraryView::Release(_)) {
-                    let switcher = cx.global::<Models>().switcher_model.clone();
+                let switcher = cx.global::<Models>().switcher_model.clone();
+                let current = switcher.read(cx).current();
+
+                let parent = match current {
+                    ViewSwitchMessage::Release(album_id, _) => {
+                        if this.section == LibrarySection::Artists {
+                            // Go up to the album's artist.
+                            cx.artist_id_for_album(album_id)
+                                .ok()
+                                .map(ViewSwitchMessage::Artist)
+                        } else {
+                            Some(ViewSwitchMessage::Albums)
+                        }
+                    }
+                    ViewSwitchMessage::Artist(_) => Some(ViewSwitchMessage::Artists),
+                    _ => None, // Already at top level
+                };
+
+                if let Some(dest) = parent {
                     switcher.update(cx, |_, cx| {
-                        cx.emit(ViewSwitchMessage::Back);
+                        cx.emit(dest);
                     });
                 }
             }))
