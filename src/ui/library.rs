@@ -457,7 +457,8 @@ impl Library {
                             this.left_view = Some(this.view.clone());
 
                             // Restore last selection for the right pane if available
-                            if remember {
+                            // (only on explicit navigation, not Back/Forward)
+                            if remember && is_explicit_nav {
                                 let restored = last_detail_model_for(&current_msg, cx)
                                     .and_then(|model| *model.read(cx))
                                     .map(|d| ViewSwitchMessage::from_last_detail(&d));
@@ -469,8 +470,9 @@ impl Library {
                                 this.right_view = None;
                             }
                         }
-                    } else if remember && !current_msg.is_detail_page() {
+                    } else if remember && is_explicit_nav && !current_msg.is_detail_page() {
                         // Single-column: auto-navigate to last selection
+                        // (only on explicit navigation, not Back/Forward)
                         let restored = last_detail_model_for(&current_msg, cx)
                             .and_then(|model| *model.read(cx))
                             .map(|d| ViewSwitchMessage::from_last_detail(&d));
