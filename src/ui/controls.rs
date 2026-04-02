@@ -428,7 +428,7 @@ impl Render for InfoSection {
                                                     .id("info-section-subtitle")
                                                     .flex_shrink_0()
                                                     .text_color(theme.text_secondary)
-                                                    .child(format!("; {name}"))
+                                                    .child(format!(", {name}"))
                                                     .tooltip(build_tooltip(
                                                         tr!("SUBTITLE", "Subtitle"),
                                                     )),
@@ -440,7 +440,7 @@ impl Render for InfoSection {
                                                     .id("info-section-guest-artist")
                                                     .flex_shrink_0()
                                                     .text_color(theme.text_secondary)
-                                                    .child(format!("; {name}"))
+                                                    .child(format!(", {name}"))
                                                     .tooltip(build_tooltip(
                                                         tr!("GUEST_ARTIST", "Guest Artist"),
                                                     )),
@@ -452,7 +452,7 @@ impl Render for InfoSection {
                                                     .id("info-section-performer")
                                                     .flex_shrink_0()
                                                     .text_color(theme.text_secondary)
-                                                    .child(format!("; {name}"))
+                                                    .child(format!(", {name}"))
                                                     .tooltip(build_tooltip(
                                                         tr!("PERFORMER", "Performer"),
                                                     )),
@@ -464,7 +464,7 @@ impl Render for InfoSection {
                                                     .id("info-section-remixer")
                                                     .flex_shrink_0()
                                                     .text_color(theme.text_secondary)
-                                                    .child(format!("; {name}"))
+                                                    .child(format!(", {name}"))
                                                     .tooltip(build_tooltip(
                                                         tr!("REMIXER", "Remixer"),
                                                     )),

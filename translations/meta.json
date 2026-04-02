@@ -391,7 +391,7 @@
   },
   "GUEST_ARTIST": {
     "context": "track_item.rs",
-    "definedIn": "src/ui/library/track_listing/track_item.rs:383",
+    "definedIn": "src/ui/library/track_listing/track_item.rs:382",
     "plural": false,
     "description": null
   },
@@ -715,7 +715,7 @@
   },
   "REMIXER": {
     "context": "track_item.rs",
-    "definedIn": "src/ui/library/track_listing/track_item.rs:428",
+    "definedIn": "src/ui/library/track_listing/track_item.rs:429",
     "plural": false,
     "description": null
   },
@@ -1117,7 +1117,7 @@
   },
   "SUBTITLE": {
     "context": "track_item.rs",
-    "definedIn": "src/ui/library/track_listing/track_item.rs:362",
+    "definedIn": "src/ui/library/track_listing/track_item.rs:360",
     "plural": false,
     "description": null
   },
