@@ -285,9 +285,7 @@ pub fn run() -> anyhow::Result<()> {
 
             cx.activate(true);
 
-            let bounds = if let Some(window_information) = storage_data.window_information
-                && !cfg!(target_os = "windows")
-            {
+            let bounds = if let Some(window_information) = storage_data.window_information {
                 cx.global::<Models>()
                     .window_information
                     .clone()
