@@ -225,6 +225,12 @@ impl SymphoniaStream {
                 Some(StandardTagKey::OriginalArtist) => {
                     self.current_metadata.original_artist = Some(tag.value.to_string())
                 }
+                Some(StandardTagKey::Performer) => {
+                    self.current_metadata.performer = Some(tag.value.to_string())
+                }
+                Some(StandardTagKey::Remixer) => {
+                    self.current_metadata.remixer = Some(tag.value.to_string())
+                }
                 Some(StandardTagKey::Composer) => {
                     self.current_metadata.composer = Some(tag.value.to_string())
                 }
@@ -411,6 +417,10 @@ impl SymphoniaStream {
                     // ID3 shenanigans
                     } else if key.eq_ignore_ascii_case("TXXX:MusicBrainz Album Id") {
                         self.current_metadata.mbid_album = Some(tag.value.to_string());
+                    } else if key.eq_ignore_ascii_case("TXXX:Guest Artist")
+                        || key.eq_ignore_ascii_case("GUEST ARTIST")
+                    {
+                        self.current_metadata.guest_artist = Some(tag.value.to_string());
                     }
                 }
             }

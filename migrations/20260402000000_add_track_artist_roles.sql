@@ -1,0 +1,3 @@
+ALTER TABLE track ADD COLUMN guest_artist TEXT;
+ALTER TABLE track ADD COLUMN performer TEXT;
+ALTER TABLE track ADD COLUMN remixer TEXT;

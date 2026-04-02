@@ -241,6 +241,12 @@ pub struct Track {
     pub location: PathBuf,
     pub artist_names: Option<DBString>,
     #[sqlx(default)]
+    pub guest_artist: Option<DBString>,
+    #[sqlx(default)]
+    pub performer: Option<DBString>,
+    #[sqlx(default)]
+    pub remixer: Option<DBString>,
+    #[sqlx(default)]
     pub rg_track_gain: Option<f64>,
     #[sqlx(default)]
     pub rg_track_peak: Option<f64>,

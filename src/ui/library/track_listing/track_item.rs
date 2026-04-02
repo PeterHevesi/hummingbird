@@ -8,6 +8,7 @@ use std::{rc::Rc, sync::Arc};
 
 use crate::ui::components::drag_drop::{DragPreview, TrackDragData};
 use crate::ui::components::icons::{STAR, STAR_FILLED, icon};
+use crate::ui::components::tooltip::build_tooltip;
 use crate::ui::library::context_menus::play_track_next;
 use crate::ui::library::context_menus::track::TrackContextMenu;
 use crate::ui::models::PlaylistEvent;
@@ -325,6 +326,7 @@ impl Render for TrackItem {
                                     )
                                     .child(
                                         div()
+                                            .id("track-artist-roles")
                                             .font_weight(FontWeight::LIGHT)
                                             .text_sm()
                                             .my_auto()
@@ -332,13 +334,97 @@ impl Render for TrackItem {
                                             .text_ellipsis()
                                             .overflow_x_hidden()
                                             .flex_shrink()
+                                            .flex()
                                             .ml(px(12.0))
                                             .when(show_artist_name, |this| {
                                                 this.when_some(
                                                     self.track.artist_names.clone(),
                                                     |this, v| this.child(v.0),
                                                 )
-                                            }),
+                                            })
+                                            .when_some(
+                                                self.track.guest_artist.clone(),
+                                                |this, v| {
+                                                    this.child(
+                                                        div()
+                                                            .id("track-guest-artist")
+                                                            .flex_shrink_0()
+                                                            .child(format!(
+                                                                "{}{}",
+                                                                if show_artist_name {
+                                                                    "; "
+                                                                } else {
+                                                                    ""
+                                                                },
+                                                                v.0
+                                                            ))
+                                                            .tooltip(build_tooltip(tr!(
+                                                                "GUEST_ARTIST",
+                                                                "Guest Artist"
+                                                            ))),
+                                                    )
+                                                },
+                                            )
+                                            .when_some(
+                                                self.track.performer.clone(),
+                                                |this, v| {
+                                                    this.child(
+                                                        div()
+                                                            .id("track-performer")
+                                                            .flex_shrink_0()
+                                                            .child(format!(
+                                                                "{}{}",
+                                                                if show_artist_name
+                                                                    || self
+                                                                        .track
+                                                                        .guest_artist
+                                                                        .is_some()
+                                                                {
+                                                                    "; "
+                                                                } else {
+                                                                    ""
+                                                                },
+                                                                v.0
+                                                            ))
+                                                            .tooltip(build_tooltip(tr!(
+                                                                "PERFORMER",
+                                                                "Performer"
+                                                            ))),
+                                                    )
+                                                },
+                                            )
+                                            .when_some(
+                                                self.track.remixer.clone(),
+                                                |this, v| {
+                                                    this.child(
+                                                        div()
+                                                            .id("track-remixer")
+                                                            .flex_shrink_0()
+                                                            .child(format!(
+                                                                "{}{}",
+                                                                if show_artist_name
+                                                                    || self
+                                                                        .track
+                                                                        .guest_artist
+                                                                        .is_some()
+                                                                    || self
+                                                                        .track
+                                                                        .performer
+                                                                        .is_some()
+                                                                {
+                                                                    "; "
+                                                                } else {
+                                                                    ""
+                                                                },
+                                                                v.0
+                                                            ))
+                                                            .tooltip(build_tooltip(tr!(
+                                                                "REMIXER",
+                                                                "Remixer"
+                                                            ))),
+                                                    )
+                                                },
+                                            ),
                                     )
                                     .child(
                                         div()

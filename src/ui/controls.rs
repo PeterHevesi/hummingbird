@@ -121,6 +121,9 @@ impl Render for Controls {
 pub struct InfoSection {
     track_name: Option<SharedString>,
     artist_name: Option<SharedString>,
+    guest_artist: Option<SharedString>,
+    performer: Option<SharedString>,
+    remixer: Option<SharedString>,
     albumart_actual: Option<ImageSource>,
     albumart_original: Option<ImageSource>,
     playback_info: PlaybackInfo,
@@ -154,6 +157,9 @@ impl InfoSection {
                     .clone()
                     .or(metadata.album_artist.clone())
                     .map(SharedString::from);
+                this.guest_artist = metadata.guest_artist.clone().map(SharedString::from);
+                this.performer = metadata.performer.clone().map(SharedString::from);
+                this.remixer = metadata.remixer.clone().map(SharedString::from);
 
                 cx.notify();
             })
@@ -236,6 +242,9 @@ impl InfoSection {
             Self {
                 artist_name: None,
                 track_name: None,
+                guest_artist: None,
+                performer: None,
+                remixer: None,
                 albumart_actual: None,
                 albumart_original: None,
                 playback_info,
@@ -382,16 +391,70 @@ impl Render for InfoSection {
                                 .child(
                                     div()
                                         .id("info-section-artist-name")
+                                        .flex()
+                                        .overflow_x_hidden()
                                         .text_ellipsis()
                                         .w_full()
-                                        .when_some(artist_navigation_track, |this, track| {
-                                            this.cursor_pointer().on_click(move |_, _, cx| {
-                                                navigate_to_track_artist(cx, &track);
-                                            })
+                                        .child(
+                                            div()
+                                                .id("info-section-artist-main")
+                                                .flex_shrink_0()
+                                                .text_ellipsis()
+                                                .when_some(
+                                                    artist_navigation_track,
+                                                    |this, track| {
+                                                        this.cursor_pointer().on_click(
+                                                            move |_, _, cx| {
+                                                                navigate_to_track_artist(
+                                                                    cx, &track,
+                                                                );
+                                                            },
+                                                        )
+                                                    },
+                                                )
+                                                .child(
+                                                    self.artist_name.clone().unwrap_or_else(|| {
+                                                        tr!("UNKNOWN_ARTIST", "Unknown Artist")
+                                                            .into()
+                                                    }),
+                                                ),
+                                        )
+                                        .when_some(self.guest_artist.clone(), |this, name| {
+                                            this.child(
+                                                div()
+                                                    .id("info-section-guest-artist")
+                                                    .flex_shrink_0()
+                                                    .text_color(theme.text_secondary)
+                                                    .child(format!("; {name}"))
+                                                    .tooltip(build_tooltip(
+                                                        tr!("GUEST_ARTIST", "Guest Artist"),
+                                                    )),
+                                            )
                                         })
-                                        .child(self.artist_name.clone().unwrap_or_else(|| {
-                                            tr!("UNKNOWN_ARTIST", "Unknown Artist").into()
-                                        })),
+                                        .when_some(self.performer.clone(), |this, name| {
+                                            this.child(
+                                                div()
+                                                    .id("info-section-performer")
+                                                    .flex_shrink_0()
+                                                    .text_color(theme.text_secondary)
+                                                    .child(format!("; {name}"))
+                                                    .tooltip(build_tooltip(
+                                                        tr!("PERFORMER", "Performer"),
+                                                    )),
+                                            )
+                                        })
+                                        .when_some(self.remixer.clone(), |this, name| {
+                                            this.child(
+                                                div()
+                                                    .id("info-section-remixer")
+                                                    .flex_shrink_0()
+                                                    .text_color(theme.text_secondary)
+                                                    .child(format!("; {name}"))
+                                                    .tooltip(build_tooltip(
+                                                        tr!("REMIXER", "Remixer"),
+                                                    )),
+                                            )
+                                        }),
                                 ),
                         )
                     }),
