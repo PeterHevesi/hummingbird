@@ -59,10 +59,15 @@ pub fn bind_actions(cx: &mut App) {
 }
 
 /// The navigation history + a cursor noting what the current message is.
+///
+/// Each entry is a `(ViewSwitchMessage, bool)` pair. The bool is a *skip-on-back* flag: when
+/// `true`, `go_back` will jump over the entry so it never appears as a Back destination. This is
+/// used to hide auto-inserted key-page entries that the user never explicitly saw (e.g. when
+/// "remember last selection" restores a detail page on top of its parent key page).
 #[derive(Debug)]
 pub struct NavigationHistory {
     startup_view: ViewSwitchMessage,
-    history: Vec<ViewSwitchMessage>,
+    history: Vec<(ViewSwitchMessage, bool)>,
     cursor: usize,
 }
 
@@ -70,17 +75,20 @@ impl NavigationHistory {
     pub fn new(startup_view: ViewSwitchMessage) -> Self {
         Self {
             startup_view,
-            history: vec![startup_view],
+            history: vec![(startup_view, false)],
             cursor: 0,
         }
     }
 
     pub fn current(&self) -> ViewSwitchMessage {
-        self.history[self.cursor]
+        self.history[self.cursor].0
     }
 
     pub fn can_go_back(&self) -> bool {
-        self.cursor > 0
+        // Can go back if there is any non-skip entry before the cursor.
+        self.history[..self.cursor]
+            .iter()
+            .any(|(_, skip)| !skip)
     }
 
     pub fn can_go_forward(&self) -> bool {
@@ -88,12 +96,13 @@ impl NavigationHistory {
     }
 
     pub fn go_back(&mut self) -> Option<ViewSwitchMessage> {
-        if self.can_go_back() {
+        while self.cursor > 0 {
             self.cursor -= 1;
-            Some(self.current())
-        } else {
-            None
+            if !self.history[self.cursor].1 {
+                return Some(self.current());
+            }
         }
+        None
     }
 
     pub fn go_forward(&mut self) -> Option<ViewSwitchMessage> {
@@ -121,8 +130,17 @@ impl NavigationHistory {
             }
         }
 
-        self.history.push(message);
+        self.history.push((message, false));
         self.cursor = self.history.len() - 1;
+    }
+
+    /// Marks the entry immediately before the cursor as *skip-on-back*. Used after a restore
+    /// pushes a detail entry on top of its parent key page — the key page should be invisible
+    /// to Back navigation since the user never explicitly viewed it.
+    pub fn mark_preceding_skip_on_back(&mut self) {
+        if self.cursor > 0 {
+            self.history[self.cursor - 1].1 = true;
+        }
     }
 
     fn eviction_index(&self) -> usize {
@@ -130,7 +148,7 @@ impl NavigationHistory {
         let most_recent_key_idx = self
             .history
             .iter()
-            .rposition(ViewSwitchMessage::is_key_page);
+            .rposition(|(m, _)| m.is_key_page());
 
         if most_recent_key_idx == Some(oldest_idx) && self.history.len() > 1 {
             1
@@ -147,8 +165,8 @@ impl NavigationHistory {
         self.history[..self.cursor]
             .iter()
             .rev()
-            .find(|m| pred(m))
-            .copied()
+            .find(|&&(ref m, _)| pred(m))
+            .map(|&(m, _)| m)
     }
 
     /// Removes history entries that do not satisfy `f`, adjusting the cursor so that it continues
@@ -163,13 +181,13 @@ impl NavigationHistory {
         // Count how many entries at or before the cursor will be removed.
         let removed_before_or_at_cursor = self.history[..=self.cursor]
             .iter()
-            .filter(|v| !f(v))
+            .filter(|&&(ref v, _)| !f(v))
             .count();
 
-        self.history.retain(f);
+        self.history.retain(|(v, _)| f(v));
 
         if self.history.is_empty() {
-            self.history.push(self.startup_view);
+            self.history.push((self.startup_view, false));
             self.cursor = 0;
         } else {
             self.cursor = self
@@ -436,6 +454,8 @@ impl Library {
 
                     // When explicitly navigating to a key page with a remembered detail,
                     // push the detail into history as a real entry so Back/Forward work naturally.
+                    // Mark the key-page entry as skip-on-back so Back jumps over it — the user
+                    // never explicitly saw the key page.
                     if remember && is_explicit_nav && !current_msg.is_detail_page() {
                         let restored = last_detail_model_for(&current_msg, cx)
                             .and_then(|model| *model.read(cx))
@@ -445,6 +465,7 @@ impl Library {
                             // Push into history and update the view
                             m.update(cx, |history, cx| {
                                 history.navigate(detail_msg);
+                                history.mark_preceding_skip_on_back();
                                 cx.notify();
                             });
                             this.view = make_view(&detail_msg, cx, &m, &this.scroll_state);

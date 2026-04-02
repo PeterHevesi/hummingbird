@@ -97,7 +97,7 @@
   },
   "ACTION_GROUP_PLAYLIST": {
     "context": "library.rs",
-    "definedIn": "src/ui/library.rs:415",
+    "definedIn": "src/ui/library.rs:519",
     "plural": false,
     "description": null
   },
@@ -109,7 +109,7 @@
   },
   "ACTION_IMPORT_PLAYLIST": {
     "context": "library.rs",
-    "definedIn": "src/ui/library.rs:416",
+    "definedIn": "src/ui/library.rs:520",
     "plural": false,
     "description": null
   },
@@ -415,13 +415,13 @@
   },
   "INTERFACE_ALWAYS_SHOW_SCROLLBARS": {
     "context": "interface.rs",
-    "definedIn": "src/ui/settings/interface.rs:291",
+    "definedIn": "src/ui/settings/interface.rs:312",
     "plural": false,
     "description": null
   },
   "INTERFACE_ALWAYS_SHOW_SCROLLBARS_SUBTEXT": {
     "context": "interface.rs",
-    "definedIn": "src/ui/settings/interface.rs:294",
+    "definedIn": "src/ui/settings/interface.rs:315",
     "plural": false,
     "description": null
   },
@@ -439,11 +439,23 @@
   },
   "INTERFACE_GRID_MIN_ITEM_WIDTH": {
     "context": "interface.rs",
-    "definedIn": "src/ui/settings/interface.rs:262",
+    "definedIn": "src/ui/settings/interface.rs:283",
     "plural": false,
     "description": null
   },
   "INTERFACE_GRID_MIN_ITEM_WIDTH_SUBTEXT": {
+    "context": "interface.rs",
+    "definedIn": "src/ui/settings/interface.rs:286",
+    "plural": false,
+    "description": null
+  },
+  "INTERFACE_REMEMBER_LAST_SELECTION": {
+    "context": "interface.rs",
+    "definedIn": "src/ui/settings/interface.rs:262",
+    "plural": false,
+    "description": null
+  },
+  "INTERFACE_REMEMBER_LAST_SELECTION_SUBTEXT": {
     "context": "interface.rs",
     "definedIn": "src/ui/settings/interface.rs:265",
     "plural": false,

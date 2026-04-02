@@ -74,6 +74,8 @@
   "INTERFACE_FULL_WIDTH_LIBRARY_SUBTEXT": "Allows the library to take up the full width of the screen.",
   "INTERFACE_GRID_MIN_ITEM_WIDTH": "Grid item width",
   "INTERFACE_GRID_MIN_ITEM_WIDTH_SUBTEXT": "Adjusts the minimum width of items in grid view.",
+  "INTERFACE_REMEMBER_LAST_SELECTION": "Remember last selection",
+  "INTERFACE_REMEMBER_LAST_SELECTION_SUBTEXT": "Remember the last opened album or artist in Albums and Artists views.",
   "INTERFACE_STARTUP_LIBRARY_VIEW": "Default startup view",
   "INTERFACE_STARTUP_LIBRARY_VIEW_SUBTEXT": "Choose which library page opens when Hummingbird launches.",
   "INTERFACE_THEME": "Theme",
