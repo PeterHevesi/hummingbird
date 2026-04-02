@@ -417,7 +417,6 @@ impl Library {
                     if remember && is_explicit_nav && current_msg.is_detail_page() {
                         // Determine which key page owns this detail
                         let owner_key = if two_column {
-                            // In two-column mode, the left pane tells us which view we're in
                             match &this.left_view {
                                 Some(LibraryView::Album(_)) => Some(ViewSwitchMessage::Albums),
                                 Some(LibraryView::Artists(_)) => Some(ViewSwitchMessage::Artists),
@@ -435,6 +434,27 @@ impl Library {
                         }
                     }
 
+                    // When explicitly navigating to a key page with a remembered detail,
+                    // push the detail into history as a real entry so Back/Forward work naturally.
+                    if remember && is_explicit_nav && !current_msg.is_detail_page() {
+                        let restored = last_detail_model_for(&current_msg, cx)
+                            .and_then(|model| *model.read(cx))
+                            .map(|d| ViewSwitchMessage::from_last_detail(&d));
+
+                        if let Some(detail_msg) = restored {
+                            // Push into history and update the view
+                            m.update(cx, |history, cx| {
+                                history.navigate(detail_msg);
+                                cx.notify();
+                            });
+                            this.view = make_view(&detail_msg, cx, &m, &this.scroll_state);
+                        }
+                    }
+
+                    // Re-read current message after possible history change above
+                    let current_msg = m.read(cx).current();
+
+                    // Standard two-column layout logic (unchanged from original)
                     if two_column {
                         if current_msg.is_detail_page() {
                             this.right_view = Some(this.view.clone());
@@ -453,40 +473,10 @@ impl Library {
                                     .map(|lm| make_view(lm, cx, &m, &this.scroll_state));
                             }
                         } else {
-                            // Key page: show in left pane
+                            // Key page: show full-width in left pane, clear right
                             this.left_view = Some(this.view.clone());
-
-                            // Restore last selection for the right pane if available
-                            // (only on explicit navigation, not Back/Forward)
-                            if remember && is_explicit_nav {
-                                let restored = last_detail_model_for(&current_msg, cx)
-                                    .and_then(|model| *model.read(cx))
-                                    .map(|d| ViewSwitchMessage::from_last_detail(&d));
-
-                                this.right_view = restored
-                                    .as_ref()
-                                    .map(|msg| make_view(msg, cx, &m, &this.scroll_state));
-                            } else {
-                                this.right_view = None;
-                            }
+                            this.right_view = None;
                         }
-                    } else if remember && is_explicit_nav && !current_msg.is_detail_page() {
-                        // Single-column: auto-navigate to last selection
-                        // (only on explicit navigation, not Back/Forward)
-                        let restored = last_detail_model_for(&current_msg, cx)
-                            .and_then(|model| *model.read(cx))
-                            .map(|d| ViewSwitchMessage::from_last_detail(&d));
-
-                        if let Some(msg) = restored {
-                            m.update(cx, |history, cx| {
-                                history.navigate(msg);
-                                cx.notify();
-                            });
-                            this.view = make_view(&msg, cx, &m, &this.scroll_state);
-                        }
-
-                        this.left_view = None;
-                        this.right_view = None;
                     } else {
                         this.left_view = None;
                         this.right_view = None;
