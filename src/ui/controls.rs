@@ -394,9 +394,11 @@ impl Render for InfoSection {
                                 .child(
                                     div()
                                         .id("info-section-artist-name")
+                                        .on_hover(|_, window, _| {
+                                            window.refresh();
+                                        })
                                         .flex()
                                         .overflow_x_hidden()
-                                        .text_ellipsis()
                                         .w_full()
                                         .child(
                                             div()
