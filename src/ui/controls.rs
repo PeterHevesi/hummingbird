@@ -432,7 +432,7 @@ impl Render for InfoSection {
                                                     .text_color(theme.text_secondary)
                                                     .child(format!(", {name}"))
                                                     .tooltip(build_tooltip(
-                                                        tr!("SUBTITLE", "Subtitle"),
+                                                        tr!("SUBTITLE"),
                                                     )),
                                             )
                                         })
@@ -444,7 +444,7 @@ impl Render for InfoSection {
                                                     .text_color(theme.text_secondary)
                                                     .child(format!(", {name}"))
                                                     .tooltip(build_tooltip(
-                                                        tr!("GUEST_ARTIST", "Guest Artist"),
+                                                        tr!("GUEST_ARTIST"),
                                                     )),
                                             )
                                         })
@@ -456,7 +456,7 @@ impl Render for InfoSection {
                                                     .text_color(theme.text_secondary)
                                                     .child(format!(", {name}"))
                                                     .tooltip(build_tooltip(
-                                                        tr!("PERFORMER", "Performer"),
+                                                        tr!("PERFORMER"),
                                                     )),
                                             )
                                         })
@@ -468,7 +468,7 @@ impl Render for InfoSection {
                                                     .text_color(theme.text_secondary)
                                                     .child(format!(", {name}"))
                                                     .tooltip(build_tooltip(
-                                                        tr!("REMIXER", "Remixer"),
+                                                        tr!("REMIXER"),
                                                     )),
                                             )
                                         }),
