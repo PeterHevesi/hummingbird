@@ -354,7 +354,11 @@ impl Render for TrackItem {
                                                     STAR
                                                 })
                                                 .size(px(14.0))
-                                                .text_color(theme.text_secondary),
+                                                .text_color(if self.is_liked.is_some() {
+                                                    theme.liked_song
+                                                } else {
+                                                    theme.text_secondary
+                                                }),
                                             )
                                             .group(self.hover_group.clone())
                                             .when(is_available, |this| {

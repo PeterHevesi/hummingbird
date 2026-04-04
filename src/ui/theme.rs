@@ -131,6 +131,8 @@ pub struct Theme {
     pub callout_background: Rgba,
     pub callout_border: Rgba,
     pub callout_text: Rgba,
+
+    pub liked_song: Rgba,
 }
 
 impl Default for Theme {
@@ -252,6 +254,8 @@ impl Default for Theme {
             callout_background: rgba(0x2E280053),
             callout_border: rgba(0x5B45008E),
             callout_text: rgb(0xF0EBDE),
+
+            liked_song: rgb(0x688CF0),
         }
     }
 }
