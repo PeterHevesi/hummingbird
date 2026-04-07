@@ -1,14 +1,14 @@
 {
   "ABOUT": "O aplikaci Hummingbird",
   "ABOUT_COPYRIGHT": "Copyright © 2024 - 2026 William Whittaker a přispěvatelé.",
-  "ABOUT_LICENSE_AFTER_LINK": "",
+  "ABOUT_LICENSE_AFTER_LINK": "​",
   "ABOUT_LICENSE_BEFORE_LINK": "Licencováno pod licencí Apache, verze 2.0.",
   "ABOUT_LICENSE_LINK": "Zjistit více o svých právech.",
   "ABOUT_LINKS_BUG": "Nahlásit chybu",
   "ABOUT_LINKS_CODE": "Zobrazit zdrojový kód",
   "ABOUT_LINKS_END": "na GitHubu.",
   "ABOUT_LINKS_MIDDLE": " nebo ",
-  "ABOUT_LINKS_START": "",
+  "ABOUT_LINKS_START": "​",
   "ACTION_ABOUT": "O aplikaci",
   "ACTION_CHECK_FOR_UPDATES": "Zkontrolovat aktualizace",
   "ACTION_COPY_TROUBLESHOOTING_INFO": "Kopírovat informace pro řešení problémů",
@@ -95,8 +95,6 @@
   "NEXT_TRACK": "Další skladba",
   "NO_LYRICS": "Žádný text skladby",
   "PALETTE_SHOW_MORE": {
-    "one": "Zobrazit další {{count}}...",
-    "few": "Zobrazit další {{count}}...",
     "other": "Zobrazit dalších {{count}}..."
   },
   "PATREON": "Podpořte nás na Patreonu",
@@ -111,8 +109,6 @@
   "PLAYBACK_RG_FALLBACK_PREAMP": "Náhradný předzesilovač ReplayGain",
   "PLAYBACK_RG_FALLBACK_PREAMP_SUBTEXT": "Použije se, když skladby nemají údaje ReplayGain.",
   "PLAYLIST_TRACK_COUNT": {
-    "one": "{{count}} skladba",
-    "few": "{{count}} skladby",
     "other": "{{count}} skladeb"
   },
   "PLAY_FROM_HERE": "Přehrát odtud",
@@ -183,13 +179,9 @@
   "SORT_TITLE": "Název",
   "STABLE": "Stabilní",
   "STATS_TOTAL_LENGTH": {
-    "one": "{{count}} minuta",
-    "few": "{{count}} minuty",
     "other": "{{count}} minut"
   },
   "STATS_TRACKS": {
-    "one": "{{count}} skladba",
-    "few": "{{count}} skladby",
     "other": "{{count}} skladeb"
   },
   "STOP_REPEATING": "Zastavit opakování",

@@ -1,14 +1,14 @@
 {
   "ABOUT": "O aplikácií Hummingbird",
   "ABOUT_COPYRIGHT": "Copyright © 2024 - 2026 William Whittaker a prispievatelia.",
-  "ABOUT_LICENSE_AFTER_LINK": "",
+  "ABOUT_LICENSE_AFTER_LINK": "​",
   "ABOUT_LICENSE_BEFORE_LINK": "Licencované pod licenciou Apache, verzia 2.0. ",
   "ABOUT_LICENSE_LINK": "Zisti viac o svojich právach.",
   "ABOUT_LINKS_BUG": "Nahlásiť chybu",
   "ABOUT_LINKS_CODE": "zobraziť zdrojový kód",
   "ABOUT_LINKS_END": " na GitHube.",
   "ABOUT_LINKS_MIDDLE": " alebo ",
-  "ABOUT_LINKS_START": "",
+  "ABOUT_LINKS_START": "​",
   "ACTION_ABOUT": "O aplikácií",
   "ACTION_CHECK_FOR_UPDATES": "Skontrolovať aktualizácie",
   "ACTION_COPY_TROUBLESHOOTING_INFO": "Kopírovať informácie na riešenie problémov",
@@ -95,8 +95,6 @@
   "NEXT_TRACK": "Ďalšia skladba",
   "NO_LYRICS": "Žiadny text skladby",
   "PALETTE_SHOW_MORE": {
-    "one": "Zobraziť ďalšiu {{count}}...",
-    "few": "Zobraziť ďalšie {{count}}...",
     "other": "Zobraziť ďalších {{count}}..."
   },
   "PATREON": "Podporte nás na Patreone",
@@ -111,8 +109,6 @@
   "PLAYBACK_RG_FALLBACK_PREAMP": "Náhradný predzosilňovač ReplayGain",
   "PLAYBACK_RG_FALLBACK_PREAMP_SUBTEXT": "Použije sa, keď skladby nemajú údaje ReplayGain.",
   "PLAYLIST_TRACK_COUNT": {
-    "one": "{{count}} skladba",
-    "few": "{{count}} skladby",
     "other": "{{count}} skladieb"
   },
   "PLAY_FROM_HERE": "Prehrať odtiaľto",
@@ -183,13 +179,9 @@
   "SORT_TITLE": "Názov",
   "STABLE": "Stabilná",
   "STATS_TOTAL_LENGTH": {
-    "one": "{{count}} minúta",
-    "few": "{{count}} minúty",
     "other": "{{count}} minút"
   },
   "STATS_TRACKS": {
-    "one": "{{count}} skladba",
-    "few": "{{count}} skladby",
     "other": "{{count}} skladieb"
   },
   "STOP_REPEATING": "Zastaviť opakovanie",
