@@ -72,7 +72,7 @@ pub fn register_actions(cx: &mut App) {
     )]);
 
     cx.bind_keys([KeyBinding::new("alt-shift-s", ForceScan, None)]);
-    cx.bind_keys([KeyBinding::new("shift-s", Scan, Some("!TextInput"))]);
+    cx.bind_keys([KeyBinding::new("alt-s", Scan, None)]);
     cx.bind_keys([KeyBinding::new("space", PlayPause, None)]);
 
     let mut app_menu = MenuBuilder::new(tr!("APP_NAME"))
