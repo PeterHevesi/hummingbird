@@ -16,12 +16,18 @@ pub struct SegmentedControl<T: Clone + PartialEq + 'static> {
     options: SmallVec<[(T, SharedString); 5]>,
     selected: Option<T>,
     on_change: Option<Rc<ChangeHandler<T>>>,
+    fit_content: bool,
     div: Div,
 }
 
 impl<T: Clone + PartialEq + 'static> SegmentedControl<T> {
     pub fn selected(mut self, selected: T) -> Self {
         self.selected = Some(selected);
+        self
+    }
+
+    pub fn fit_content(mut self) -> Self {
+        self.fit_content = true;
         self
     }
 
@@ -48,7 +54,7 @@ impl<T: Clone + PartialEq + 'static> RenderOnce for SegmentedControl<T> {
 
         let mut row = div()
             .flex()
-            .w_full()
+            .when(!self.fit_content, |this| this.w_full())
             .rounded(px(4.0))
             .gap(px(2.0))
             .p(px(2.0))
@@ -65,12 +71,13 @@ impl<T: Clone + PartialEq + 'static> RenderOnce for SegmentedControl<T> {
             row = row.child(
                 div()
                     .id(segment_id)
-                    .flex_1()
+                    .when(!self.fit_content, |this| this.flex_1())
                     .flex()
                     .items_center()
                     .justify_center()
-                    .px(px(6.0))
-                    .py(px(4.0))
+                    .px(px(8.0))
+                    .pt(px(3.0))
+                    .pb(px(2.0))
                     .text_xs()
                     .cursor_pointer()
                     .rounded(px(3.0))
@@ -103,6 +110,7 @@ pub fn segmented_control<T: Clone + PartialEq + 'static>(
         options: SmallVec::new(),
         selected: None,
         on_change: None,
+        fit_content: false,
         div: div(),
     }
 }

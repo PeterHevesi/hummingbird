@@ -93,7 +93,7 @@ impl Render for ReplayGainButton {
                         .on_dismiss(move |_, cx| {
                             entity.update(cx, |this, cx| this.close_popover(cx)).ok();
                         })
-                        .w(px(220.0))
+                        .min_w(px(200.0))
                         .on_mouse_down_out(move |_, _, cx| {
                             entity2.update(cx, |this, cx| this.close_popover(cx)).ok();
                         })
@@ -103,6 +103,7 @@ impl Render for ReplayGainButton {
                                 .flex_col()
                                 .gap(px(10.0))
                                 .p(px(4.0))
+                                .pb(px(8.0))
                                 .child(
                                     div()
                                         .flex()
@@ -118,7 +119,7 @@ impl Render for ReplayGainButton {
                                         .child({
                                             let settings = settings.clone();
                                             segmented_control("rg-mode")
-                                                .w_full()
+                                                .fit_content()
                                                 .option(ReplayGainMode::Off, tr!("RG_OFF", "Off"))
                                                 .option(
                                                     ReplayGainMode::Auto,

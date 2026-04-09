@@ -757,37 +757,37 @@
   },
   "RG_ALBUM": {
     "context": "replaygain.rs",
-    "definedIn": "src/ui/controls/replaygain.rs:133",
+    "definedIn": "src/ui/controls/replaygain.rs:134",
     "plural": false,
     "description": null
   },
   "RG_AUTO": {
     "context": "replaygain.rs",
-    "definedIn": "src/ui/controls/replaygain.rs:125",
+    "definedIn": "src/ui/controls/replaygain.rs:126",
     "plural": false,
     "description": null
   },
   "RG_MODE_LABEL": {
     "context": "replaygain.rs",
-    "definedIn": "src/ui/controls/replaygain.rs:116",
+    "definedIn": "src/ui/controls/replaygain.rs:117",
     "plural": false,
     "description": null
   },
   "RG_OFF": {
     "context": "replaygain.rs",
-    "definedIn": "src/ui/controls/replaygain.rs:122",
+    "definedIn": "src/ui/controls/replaygain.rs:123",
     "plural": false,
     "description": null
   },
   "RG_PREAMP_LABEL": {
     "context": "replaygain.rs",
-    "definedIn": "src/ui/controls/replaygain.rs:156",
+    "definedIn": "src/ui/controls/replaygain.rs:157",
     "plural": false,
     "description": null
   },
   "RG_TRACK": {
     "context": "replaygain.rs",
-    "definedIn": "src/ui/controls/replaygain.rs:129",
+    "definedIn": "src/ui/controls/replaygain.rs:130",
     "plural": false,
     "description": null
   },
