@@ -142,7 +142,7 @@ where
         };
 
         let mut img_container = div()
-            .size_full()
+            .w_full()
             .flex_1()
             .rounded(px(6.0))
             .bg(theme.album_art_background)
@@ -153,6 +153,7 @@ where
                 managed_image((self.id.clone(), "grid_image"), image)
                     .w_full()
                     .h_full()
+                    .aspect_square()
                     .rounded(px(6.0))
                     .object_fit(ObjectFit::Fill),
             );
