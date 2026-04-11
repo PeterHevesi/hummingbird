@@ -54,7 +54,7 @@ pub(super) fn update_portable(path: &Path) -> anyhow::Result<()> {
 /// Determines if the application was installed using Inno Setup by scanning the registry for
 /// uninstaller entries matching that path of the current executable.
 pub(super) fn used_installer() -> anyhow::Result<bool> {
-    let current_exe = running_exe_path()?;
+    let current_exe = running_exe_path()?.canonicalize()?;
     let uninstall = winreg::RegKey::predef(winreg::enums::HKEY_LOCAL_MACHINE)
         .open_subkey(r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall")
         .with_context(|| {
@@ -69,21 +69,17 @@ pub(super) fn used_installer() -> anyhow::Result<bool> {
         let entry = uninstall.open_subkey(&key_name)?;
 
         if let Ok(display_icon) = entry.get_value::<String, _>("DisplayIcon")
-            && paths_match(&display_icon_path(&display_icon), &current_exe)
+            && let Ok(icon_path) = display_icon_path(&display_icon).canonicalize()
+            && icon_path == current_exe
         {
             return Ok(true);
         }
 
-        if let Ok(install_location) = entry.get_value::<String, _>("InstallLocation") {
-            let candidate = Path::new(install_location.trim()).join(
-                current_exe
-                    .file_name()
-                    .ok_or_else(|| anyhow!("current executable has no file name"))?,
-            );
-
-            if paths_match(&candidate, &current_exe) {
-                return Ok(true);
-            }
+        if let Ok(install_location) = entry.get_value::<String, _>("InstallLocation")
+            && let Ok(install_dir) = Path::new(install_location.trim()).canonicalize()
+            && current_exe.starts_with(&install_dir)
+        {
+            return Ok(true);
         }
     }
 
@@ -94,12 +90,4 @@ fn display_icon_path(value: &str) -> PathBuf {
     let trimmed = value.trim().trim_matches('"');
     let path = trimmed.split_once(',').map_or(trimmed, |(path, _)| path);
     PathBuf::from(path)
-}
-
-fn paths_match(candidate: &Path, current_exe: &Path) -> bool {
-    normalize_path(candidate) == normalize_path(current_exe)
-}
-
-fn normalize_path(path: &Path) -> PathBuf {
-    PathBuf::from(path).canonicalize().unwrap_or_default()
 }
