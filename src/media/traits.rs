@@ -45,16 +45,7 @@ pub trait MediaProvider: Send + Sync {
     /// Provider attempts to determine the file type based off of the file's contents.
     fn open(&self, file: File, ext: Option<&OsStr>) -> Result<Box<dyn MediaStream>, OpenError>;
 
-    /// Returns a list of mime-types that the Provider supports. Files will be checked against
-    /// mime-types *before* being checked against extensions. If the mime-type is not
-    /// recognized by any Provider, then the extensions will be searched.
-    ///
-    /// The `infer` crate is used to determine the mime-type of the file. If the `infer` crate
-    /// doesn't recognize your file, only including an extension is acceptable.
-    fn supported_mime_types(&self) -> &[&str];
-
-    /// Returns a list of file extensions the plugin supports. Files will be checked against
-    /// their extensions *after* being checked against mime-types.
+    /// Returns a list of file extensions the plugin supports.
     fn supported_extensions(&self) -> &[&str];
 
     /// Returns a list of media provider feature bitflags that the plugin supports.

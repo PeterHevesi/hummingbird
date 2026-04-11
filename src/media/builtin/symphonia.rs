@@ -481,20 +481,10 @@ impl MediaProvider for SymphoniaProvider {
         Ok(Box::new(stream))
     }
 
-    fn supported_mime_types(&self) -> &[&str] {
-        &[
-            "audio/ogg",
-            "audio/aac",
-            "audio/x-flac",
-            "audio/x-wav",
-            "audio/mpeg",
-            "audio/m4a",
-            "audio/x-aiff",
-        ]
-    }
-
     fn supported_extensions(&self) -> &[&str] {
-        &["ogg", "aac", "flac", "wav", "mp3", "m4a", "aiff", "opus"]
+        &[
+            "ogg", "oga", "aac", "flac", "wav", "mp3", "m4a", "aiff", "opus",
+        ]
     }
 
     fn supported_features(&self) -> MediaProviderFeatures {

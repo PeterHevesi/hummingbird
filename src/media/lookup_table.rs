@@ -31,26 +31,15 @@ fn provider_can_read(
     required_features: MediaProviderFeatures,
     provider: &Box<dyn MediaProvider>,
 ) -> anyhow::Result<bool> {
-    let mime = infer::get_from_path(path);
-    let mut found = false;
-
-    if let Some(mime) = mime?
-        && provider
-            .supported_mime_types()
-            .iter()
-            .any(|t| *t == mime.mime_type())
-    {
-        found = true;
-    }
-
-    if !found
-        && let Some(ext) = path.extension().and_then(|v| v.to_str())
+    // mime-types are more reliable but windows is too slow to use them
+    // so now we only use extensions
+    if let Some(ext) = path.extension().and_then(|v| v.to_str())
         && provider.supported_extensions().contains(&ext)
     {
-        found = true;
+        return Ok(provider.supported_features() & required_features == required_features);
     }
 
-    Ok(found && provider.supported_features() & required_features == required_features)
+    Ok(false)
 }
 
 pub fn can_be_read(path: &Path, required_features: MediaProviderFeatures) -> anyhow::Result<bool> {
