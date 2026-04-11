@@ -34,7 +34,10 @@ fn provider_can_read(
     // mime-types are more reliable but windows is too slow to use them
     // so now we only use extensions
     if let Some(ext) = path.extension().and_then(|v| v.to_str())
-        && provider.supported_extensions().contains(&ext)
+        && provider
+            .supported_extensions()
+            .iter()
+            .any(|v| v.eq_ignore_ascii_case(ext))
     {
         return Ok(provider.supported_features() & required_features == required_features);
     }
