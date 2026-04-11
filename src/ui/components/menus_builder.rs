@@ -71,10 +71,6 @@ impl MenuBuilder {
             disabled: self.disabled,
         })
     }
-
-    pub fn build_item(self) -> Option<MenuItem> {
-        self.build().map(MenuItem::submenu)
-    }
 }
 
 /// Creates a single GPUI `MenuItem`, unless the item is marked as macOS-only and the application

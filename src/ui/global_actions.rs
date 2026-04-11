@@ -1,5 +1,5 @@
 use cntp_i18n::tr;
-use gpui::{App, AppContext, KeyBinding, actions};
+use gpui::{App, AppContext, KeyBinding, MenuItem, actions};
 use tracing::{debug, info, warn};
 
 use crate::{
@@ -91,7 +91,14 @@ pub fn register_actions(cx: &mut App) {
 
     app_menu = app_menu
         .add_item(menu_separator(true))
-        .add_item(MenuBuilder::new("Services").macos_only(true).build_item())
+        .add_item(if cfg!(target_os = "macos") {
+            Some(MenuItem::os_submenu(
+                "Services",
+                gpui::SystemMenuType::Services,
+            ))
+        } else {
+            None
+        })
         .add_item(menu_separator(true))
         .add_item(menu_item(tr!("HIDE", "Hide Hummingbird"), HideSelf, true))
         .add_item(menu_item(
