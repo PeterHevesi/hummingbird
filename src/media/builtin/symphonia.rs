@@ -208,7 +208,7 @@ pub struct SymphoniaStream {
 impl SymphoniaStream {
     fn break_metadata(&mut self, tags: &[Tag]) {
         let id3_position_in_set_regex = Regex::new(r"(\d+)/(\d+)").unwrap();
-        let vinyl_track_regex = Regex::new(r"(?i)^([A-Z])(\d+)$").unwrap();
+        let vinyl_track_regex = Regex::new(r"(?i)^([A-Z])(\d*)$").unwrap();
         let disc_subtitle_regex = Regex::new(r"(?:Disc )?(\d+) (?:-|—|-) (.+)").unwrap();
 
         for tag in tags {
@@ -280,8 +280,12 @@ impl SymphoniaStream {
                                 self.current_metadata.disc_current = Some(side_num);
                                 self.current_metadata.vinyl_numbering = true;
                             }
-                            if let Some(track) = captures.get(2) {
+                            if let Some(track) = captures.get(2)
+                                && !track.is_empty()
+                            {
                                 self.current_metadata.track_current = track.as_str().parse().ok();
+                            } else {
+                                self.current_metadata.track_current = Some(1);
                             }
                         // check for MP3-style numbers
                         } else if let Some(captures) = id3_position_in_set_regex.captures(v) {
