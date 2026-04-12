@@ -5,7 +5,7 @@
   "ABOUT_LICENSE_BEFORE_LINK": "Lisensoitu Apache-lisenssin versiolla 2.0.",
   "ABOUT_LICENSE_LINK": "Lue lisää oikeuksistasi.",
   "ABOUT_LINKS_BUG": "Ilmoita virheestä",
-  "ABOUT_LINKS_CODE": "näytä lähdekoodi",
+  "ABOUT_LINKS_CODE": "katsele lähdekoodia",
   "ABOUT_LINKS_END": "GitHubissa.",
   "ABOUT_LINKS_MIDDLE": " tai ",
   "ABOUT_LINKS_START": "​",
@@ -20,7 +20,7 @@
   "ACTION_IMPORT_PLAYLIST": "Tuo M3U-soittolista",
   "ACTION_NEXT": "Seuraava kappale",
   "ACTION_OPEN_LOG": "Avaa lokitiedosto",
-  "ACTION_PLAYPAUSE": "Pysäytä/Jatka nykyistä kappaletta",
+  "ACTION_PLAYPAUSE": "Tauko/Jatka nykyistä kappaletta",
   "ACTION_PREVIOUS": "Edellinen kappale",
   "ACTION_QUIT": "Sulje",
   "ACTION_SEARCH": "Hae",
@@ -95,11 +95,11 @@
   "NEXT_TRACK": "Seuraava kappale",
   "NO_LYRICS": "Ei sanoja",
   "PALETTE_SHOW_MORE": {
-    "one": "",
-    "other": ""
+    "one": "Näytä {{count}} lisää...",
+    "other": "Näytä {{count}} lisää..."
   },
   "PATREON": "Tue meitä Patreonissa",
-  "PAUSE": "Pysäytä",
+  "PAUSE": "Tauko",
   "PLAY": "Toista",
   "PLAYBACK": "Toisto",
   "PLAYBACK_ALWAYS_REPEAT": "Kertaa aina",
@@ -110,8 +110,8 @@
   "PLAYBACK_RG_FALLBACK_PREAMP": "ReplayGain varaesivahvistuskerroin",
   "PLAYBACK_RG_FALLBACK_PREAMP_SUBTEXT": "Esivahvistuskerroin kappaleille joissa ei ole ReplayGain-metatietoja.",
   "PLAYLIST_TRACK_COUNT": {
-    "one": "",
-    "other": ""
+    "one": "{{count}} kappale",
+    "other": "{{count}} kappaletta"
   },
   "PLAY_FROM_HERE": "Toista alkaen tästä",
   "PLAY_NEXT": "Toista seuraavana",
@@ -181,12 +181,12 @@
   "SORT_TITLE": "Nimi",
   "STABLE": "Vakaa",
   "STATS_TOTAL_LENGTH": {
-    "one": "",
-    "other": ""
+    "one": "{{count}} minuutti",
+    "other": "{{count}} minuuttia"
   },
   "STATS_TRACKS": {
-    "one": "",
-    "other": ""
+    "one": "{{count}} kappale",
+    "other": "{{count}} kappaletta"
   },
   "STOP_REPEATING": "Lopeta kertaaminen",
   "STOP_SHUFFLING": "Lopeta sekoittaminen",
