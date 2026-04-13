@@ -13,6 +13,5 @@
       "path": "/res/bundle_translations/{lang}.json",
       "baseLang": "en"
     }
-  ],
-  "deadline": 1776106800000
+  ]
 }
