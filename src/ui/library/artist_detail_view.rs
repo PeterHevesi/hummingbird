@@ -40,7 +40,10 @@ use crate::{
     },
 };
 
-use super::ViewSwitchMessage;
+use super::{
+    ViewSwitchMessage,
+    navigation::{NavigationDisplayMode, NavigationView},
+};
 
 type GridHandler = dyn Fn(&mut App, &(u32, String)) + 'static;
 
@@ -56,6 +59,7 @@ pub struct ArtistDetailView {
     grid_render_counter: Entity<usize>,
     nav_model: Entity<super::NavigationHistory>,
     liked_sort: LikedTrackSortMethod,
+    navigation_view: Entity<NavigationView>,
 }
 
 impl ArtistDetailView {
@@ -63,6 +67,7 @@ impl ArtistDetailView {
         cx: &mut App,
         artist_id: i64,
         nav_model: Entity<super::NavigationHistory>,
+        navigation_display_mode: NavigationDisplayMode,
     ) -> Entity<Self> {
         let view: Entity<Self> = cx.new(|cx| {
             let artist = cx.get_artist_by_id(artist_id).ok();
@@ -125,8 +130,13 @@ impl ArtistDetailView {
                 scroll_handle: ScrollHandle::new(),
                 grid_views,
                 grid_render_counter,
-                nav_model,
+                nav_model: nav_model.clone(),
                 liked_sort,
+                navigation_view: NavigationView::new(
+                    cx,
+                    nav_model.clone(),
+                    navigation_display_mode,
+                ),
             }
         });
 
@@ -419,153 +429,164 @@ impl Render for ArtistDetailView {
 
         div()
             .flex()
+            .flex_col()
             .w_full()
             .max_h_full()
             .relative()
             .overflow_hidden()
-            .mt(px(10.0))
-            .border_t_1()
-            .border_color(theme.border_color)
             .when(!full_width, |this| this.max_w(px(TABLE_MAX_WIDTH)))
+            .child(self.navigation_view.clone())
             .child(
                 div()
-                    .id("artist-detail-view")
-                    .overflow_y_scroll()
-                    .track_scroll(&scroll_handle)
-                    .pb(px(18.0))
+                    .flex()
                     .w_full()
-                    .flex_shrink()
-                    .overflow_x_hidden()
+                    .max_h_full()
+                    .relative()
+                    .overflow_hidden()
+                    .mt(px(10.0))
+                    .border_t_1()
+                    .border_color(theme.border_color)
                     .child(
                         div()
-                            .pt(px(18.0))
-                            .px(px(18.0))
+                            .id("artist-detail-view")
+                            .overflow_y_scroll()
+                            .track_scroll(&scroll_handle)
+                            .pb(px(18.0))
                             .w_full()
+                            .flex_shrink()
+                            .overflow_x_hidden()
                             .child(
                                 div()
-                                    .font_weight(FontWeight::EXTRA_BOLD)
-                                    .text_size(rems(2.5))
-                                    .line_height(rems(2.75))
-                                    .overflow_x_hidden()
-                                    .pb(px(10.0))
+                                    .pt(px(18.0))
+                                    .px(px(18.0))
                                     .w_full()
-                                    .text_ellipsis()
-                                    .when_some(self.artist_name.clone(), |this, name| {
-                                        this.child(name)
+                                    .child(
+                                        div()
+                                            .font_weight(FontWeight::EXTRA_BOLD)
+                                            .text_size(rems(2.5))
+                                            .line_height(rems(2.75))
+                                            .overflow_x_hidden()
+                                            .pb(px(10.0))
+                                            .w_full()
+                                            .text_ellipsis()
+                                            .when_some(self.artist_name.clone(), |this, name| {
+                                                this.child(name)
+                                            }),
+                                    )
+                                    .when(!self.all_tracks.is_empty(), |this| {
+                                        this.child(div().pb(px(18.0)).child(playback_controls(
+                                            "artist",
+                                            has_available_artist_tracks,
+                                            current_track_in_artist,
+                                            is_playing,
+                                            {
+                                                let all_tracks = self.all_tracks.clone();
+                                                move |cx| {
+                                                    all_tracks
+                                                        .iter()
+                                                        .filter(|track| is_track_available(track))
+                                                        .map(|track| {
+                                                            QueueItemData::new(
+                                                                cx,
+                                                                track.location.clone(),
+                                                                Some(track.id),
+                                                                track.album_id,
+                                                            )
+                                                        })
+                                                        .collect()
+                                                }
+                                            },
+                                        )))
                                     }),
                             )
-                            .when(!self.all_tracks.is_empty(), |this| {
-                                this.child(div().pb(px(18.0)).child(playback_controls(
-                                    "artist",
-                                    has_available_artist_tracks,
-                                    current_track_in_artist,
-                                    is_playing,
-                                    {
-                                        let all_tracks = self.all_tracks.clone();
-                                        move |cx| {
-                                            all_tracks
+                            .when(album_count > 0, |this| {
+                                let handler: Option<Rc<GridHandler>> =
+                                    Some(Rc::new(move |cx, id| {
+                                        nav_model.update(cx, |_, cx| {
+                                            cx.emit(ViewSwitchMessage::Release(id.0 as i64, None));
+                                        });
+                                    }));
+
+                                this.child(
+                                    div()
+                                        .border_t_1()
+                                        .border_color(theme.border_color)
+                                        .px(px(18.0))
+                                        .pt(px(10.0))
+                                        .font_weight(FontWeight::BOLD)
+                                        .text_size(px(18.0))
+                                        .child(tr!("ARTIST_ALBUMS", "Albums")),
+                                )
+                                .child(
+                                    div().px(px(10.0)).pt(px(2.0)).pb(px(10.0)).w_full().child(
+                                        uniform_grid(
+                                            "artist-albums-grid",
+                                            album_count,
+                                            None,
+                                            move |idx, _, cx| {
+                                                prune_views(
+                                                    &grid_views_model,
+                                                    &grid_render_counter,
+                                                    idx,
+                                                    cx,
+                                                );
+
+                                                let item_id = album_ids[idx].clone();
+
+                                                let view = create_or_retrieve_view(
+                                                    &grid_views_model,
+                                                    idx,
+                                                    |cx| {
+                                                        GridItem::<Album, AlbumColumn>::new(
+                                                            cx,
+                                                            item_id,
+                                                            handler.clone(),
+                                                            AlbumContextMenuContext {
+                                                                show_go_to_artist: false,
+                                                            },
+                                                            GridContext::Standalone,
+                                                        )
+                                                        .unwrap()
+                                                    },
+                                                    cx,
+                                                );
+
+                                                div()
+                                                    .image_cache(hummingbird_cache(
+                                                        ("artist-album-grid", idx + 1),
+                                                        1,
+                                                    ))
+                                                    .size_full()
+                                                    .child(view)
+                                                    .into_any_element()
+                                            },
+                                        )
+                                        .min_item_width(px(grid_min_item_width))
+                                        .gap(px(0.0))
+                                        .auto_height(),
+                                    ),
+                                )
+                            })
+                            .when_some(liked_track_header, |this, header| {
+                                this.child(header).child(
+                                    div()
+                                        .w_full()
+                                        .border_t_1()
+                                        .border_color(theme.border_color)
+                                        .image_cache(retain_all("artist_liked_tracks_cache"))
+                                        .children(
+                                            self.liked_track_items
                                                 .iter()
-                                                .filter(|track| is_track_available(track))
-                                                .map(|track| {
-                                                    QueueItemData::new(
-                                                        cx,
-                                                        track.location.clone(),
-                                                        Some(track.id),
-                                                        track.album_id,
-                                                    )
-                                                })
-                                                .collect()
-                                        }
-                                    },
-                                )))
+                                                .map(|item| div().h(px(40.0)).child(item.clone())),
+                                        ),
+                                )
                             }),
                     )
-                    .when(album_count > 0, |this| {
-                        let handler: Option<Rc<GridHandler>> = Some(Rc::new(move |cx, id| {
-                            nav_model.update(cx, |_, cx| {
-                                cx.emit(ViewSwitchMessage::Release(id.0 as i64, None));
-                            });
-                        }));
-
-                        this.child(
-                            div()
-                                .border_t_1()
-                                .border_color(theme.border_color)
-                                .px(px(18.0))
-                                .pt(px(10.0))
-                                .font_weight(FontWeight::BOLD)
-                                .text_size(px(18.0))
-                                .child(tr!("ARTIST_ALBUMS", "Albums")),
-                        )
-                        .child(
-                            div().px(px(10.0)).pt(px(2.0)).pb(px(10.0)).w_full().child(
-                                uniform_grid(
-                                    "artist-albums-grid",
-                                    album_count,
-                                    None,
-                                    move |idx, _, cx| {
-                                        prune_views(
-                                            &grid_views_model,
-                                            &grid_render_counter,
-                                            idx,
-                                            cx,
-                                        );
-
-                                        let item_id = album_ids[idx].clone();
-
-                                        let view = create_or_retrieve_view(
-                                            &grid_views_model,
-                                            idx,
-                                            |cx| {
-                                                GridItem::<Album, AlbumColumn>::new(
-                                                    cx,
-                                                    item_id,
-                                                    handler.clone(),
-                                                    AlbumContextMenuContext {
-                                                        show_go_to_artist: false,
-                                                    },
-                                                    GridContext::Standalone,
-                                                )
-                                                .unwrap()
-                                            },
-                                            cx,
-                                        );
-
-                                        div()
-                                            .image_cache(hummingbird_cache(
-                                                ("artist-album-grid", idx + 1),
-                                                1,
-                                            ))
-                                            .size_full()
-                                            .child(view)
-                                            .into_any_element()
-                                    },
-                                )
-                                .min_item_width(px(grid_min_item_width))
-                                .gap(px(0.0))
-                                .auto_height(),
-                            ),
-                        )
-                    })
-                    .when_some(liked_track_header, |this, header| {
-                        this.child(header).child(
-                            div()
-                                .w_full()
-                                .border_t_1()
-                                .border_color(theme.border_color)
-                                .image_cache(retain_all("artist_liked_tracks_cache"))
-                                .children(
-                                    self.liked_track_items
-                                        .iter()
-                                        .map(|item| div().h(px(40.0)).child(item.clone())),
-                                ),
-                        )
-                    }),
+                    .child(floating_scrollbar(
+                        "artist_detail_scrollbar",
+                        scroll_handle,
+                        RightPad::Pad,
+                    )),
             )
-            .child(floating_scrollbar(
-                "artist_detail_scrollbar",
-                scroll_handle,
-                RightPad::Pad,
-            ))
     }
 }

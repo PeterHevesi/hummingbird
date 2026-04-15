@@ -13,11 +13,16 @@ use crate::{
     },
 };
 
-use super::{NavigationHistory, ViewSwitchMessage};
+use super::{
+    NavigationHistory, ViewSwitchMessage,
+    navigation::{NavigationDisplayMode, NavigationView},
+    table_view_header::TableViewHeader,
+};
 
 #[derive(Clone)]
 pub struct ArtistView {
     table: Entity<Table<ArtistWithCounts, ArtistColumn>>,
+    navigation_view: Entity<NavigationView>,
 }
 
 impl ArtistView {
@@ -25,6 +30,7 @@ impl ArtistView {
         cx: &mut App,
         view_switch_model: Entity<NavigationHistory>,
         initial_scroll_offset: Option<f32>,
+        navigation_display_mode: NavigationDisplayMode,
     ) -> Entity<Self> {
         cx.new(|cx| {
             let state = cx.global::<Models>().scan_state.clone();
@@ -35,8 +41,10 @@ impl ArtistView {
                 .get(Table::<ArtistWithCounts, ArtistColumn>::get_table_name().as_str())
                 .cloned();
 
+            let navigation_model = view_switch_model.clone();
+            let handler_model = view_switch_model.clone();
             let handler = Rc::new(move |cx: &mut App, id: &i64| {
-                view_switch_model.update(cx, |_, cx| cx.emit(ViewSwitchMessage::Artist(*id)))
+                handler_model.update(cx, |_, cx| cx.emit(ViewSwitchMessage::Artist(*id)))
             });
 
             let table = Table::new(
@@ -65,12 +73,25 @@ impl ArtistView {
             })
             .detach();
 
-            ArtistView { table }
+            ArtistView {
+                table,
+                navigation_view: NavigationView::new(cx, navigation_model, navigation_display_mode),
+            }
         })
     }
 
     pub fn get_scroll_offset(&self, cx: &App) -> f32 {
         self.table.read(cx).get_scroll_offset(cx)
+    }
+
+    pub fn set_navigation_display_mode(
+        &mut self,
+        navigation_display_mode: NavigationDisplayMode,
+        cx: &mut Context<Self>,
+    ) {
+        self.navigation_view.update(cx, |navigation_view, cx| {
+            navigation_view.set_display_mode(navigation_display_mode, cx);
+        });
     }
 }
 
@@ -88,8 +109,10 @@ impl Render for ArtistView {
             .w_full()
             .h_full()
             .when(!full_width, |this: Div| this.max_w(px(TABLE_MAX_WIDTH)))
-            .pt(px(10.0))
-            .pb(px(0.0))
+            .child(TableViewHeader::new(
+                self.navigation_view.clone(),
+                self.table.clone(),
+            ))
             .child(self.table.clone())
     }
 }

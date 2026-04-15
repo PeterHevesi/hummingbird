@@ -34,9 +34,12 @@ use crate::{
             table::table_data::TABLE_MAX_WIDTH,
             tooltip::build_tooltip,
         },
-        library::track_listing::{
-            ArtistNameVisibility,
-            track_item::{TrackItem, TrackItemLeftField},
+        library::{
+            navigation::{NavigationDisplayMode, NavigationView},
+            track_listing::{
+                ArtistNameVisibility,
+                track_item::{TrackItem, TrackItemLeftField},
+            },
         },
         models::{Models, PlaylistEvent},
         theme::Theme,
@@ -178,6 +181,7 @@ impl Render for PlaylistTrackItem {
 }
 
 pub struct PlaylistView {
+    navigation_view: Entity<NavigationView>,
     playlist: Arc<Playlist>,
     playlist_track_ids: Arc<Vec<(i64, i64, i64)>>,
     views: Entity<FxHashMap<usize, Entity<PlaylistTrackItem>>>,
@@ -191,7 +195,11 @@ pub struct PlaylistView {
 }
 
 impl PlaylistView {
-    pub fn new(cx: &mut App, playlist_id: i64) -> Entity<Self> {
+    pub(super) fn new(
+        cx: &mut App,
+        playlist_id: i64,
+        navigation_display_mode: NavigationDisplayMode,
+    ) -> Entity<Self> {
         cx.new(|cx| {
             let playlist_tracker = cx.global::<Models>().playlist_tracker.clone();
 
@@ -250,14 +258,21 @@ impl PlaylistView {
             })
             .detach();
 
+            let switcher_model = cx.global::<Models>().switcher_model.clone();
+            let navigation_view = NavigationView::new(cx, switcher_model, navigation_display_mode);
+            let views = cx.new(|_| FxHashMap::default());
+            let render_counter = cx.new(|_| 0);
+            let scroll_handle = UniformListScrollHandle::new();
+
             Self {
+                navigation_view,
                 playlist,
                 playlist_track_ids,
-                views: cx.new(|_| FxHashMap::default()),
-                render_counter: cx.new(|_| 0),
+                views,
+                render_counter,
                 focus_handle,
                 first_render: true,
-                scroll_handle: UniformListScrollHandle::new(),
+                scroll_handle,
                 drag_drop_manager,
                 list_id,
                 sort_method,
@@ -472,317 +487,326 @@ impl Render for PlaylistView {
                     error!("Failed to export playlist: {}", err);
                 }
             })
-            .pt(px(10.0))
             .flex()
             .flex_col()
             .flex_shrink()
             .overflow_x_hidden()
             .when(!full_width, |this| this.max_w(px(TABLE_MAX_WIDTH)))
             .h_full()
+            .child(self.navigation_view.clone())
             .child(
                 div()
+                    .pt(px(10.0))
                     .flex()
                     .overflow_x_hidden()
                     .flex_shrink()
-                    .px(px(18.0))
-                    .w_full()
+                    .flex_col()
+                    .h_full()
                     .child(
                         div()
-                            .bg(theme.album_art_background)
-                            .shadow_sm()
-                            .w(px(160.0))
-                            .h(px(160.0))
-                            .flex_shrink_0()
-                            .rounded(px(4.0))
-                            .overflow_hidden()
                             .flex()
-                            .items_center()
-                            .justify_center()
-                            .child(
-                                icon(if self.playlist.playlist_type == PlaylistType::System {
-                                    STAR
-                                } else {
-                                    PLAYLIST
-                                })
-                                .size(px(100.0)),
-                            ),
-                    )
-                    .child(
-                        div()
-                            .ml(px(18.0))
-                            .mt_auto()
-                            .flex_shrink()
-                            .flex()
-                            .flex_col()
-                            .w_full()
                             .overflow_x_hidden()
+                            .flex_shrink()
+                            .px(px(18.0))
+                            .w_full()
                             .child(
                                 div()
-                                    .font_weight(FontWeight::EXTRA_BOLD)
-                                    .text_size(rems(2.5))
-                                    .line_height(rems(2.75))
-                                    .overflow_x_hidden()
-                                    .pb(px(10.0))
-                                    .w_full()
-                                    .text_ellipsis()
-                                    .child(if self.playlist.is_liked_songs() {
-                                        div().child(tr!("LIKED_SONGS"))
-                                    } else {
-                                        div().child(self.playlist.name.clone())
-                                    }),
+                                    .bg(theme.album_art_background)
+                                    .shadow_sm()
+                                    .w(px(160.0))
+                                    .h(px(160.0))
+                                    .flex_shrink_0()
+                                    .rounded(px(4.0))
+                                    .overflow_hidden()
+                                    .flex()
+                                    .items_center()
+                                    .justify_center()
+                                    .child(
+                                        icon(if self.playlist.playlist_type == PlaylistType::System {
+                                            STAR
+                                        } else {
+                                            PLAYLIST
+                                        })
+                                        .size(px(100.0)),
+                                    ),
                             )
                             .child(
                                 div()
+                                    .ml(px(18.0))
+                                    .mt_auto()
+                                    .flex_shrink()
                                     .flex()
-                                    .items_end()
-                                    .justify_between()
-                                    .gap(px(12.0))
+                                    .flex_col()
                                     .w_full()
-                                    .child(playback_controls(
-                                        "playlist",
-                                        !self.playlist_track_ids.is_empty(),
-                                        false,
-                                        false,
-                                        move |cx| {
-                                            let playlist_track_ids = cx
-                                                .get_playlist_tracks_sorted(
-                                                    playlist_id,
-                                                    current_sort,
-                                                )
-                                                .unwrap_or_default();
-                                            let track_files = cx
-                                                .get_playlist_track_files(playlist_id)
-                                                .unwrap_or_default();
-
-                                            playlist_track_ids
-                                                .iter()
-                                                .zip(track_files.iter())
-                                                .map(|((_, track_id, album_id), path)| {
-                                                    QueueItemData::new(
-                                                        cx,
-                                                        path.into(),
-                                                        Some(*track_id),
-                                                        Some(*album_id),
-                                                    )
-                                                })
-                                                .collect()
-                                        },
-                                    ))
+                                    .overflow_x_hidden()
                                     .child(
                                         div()
-                                            .ml_auto()
+                                            .font_weight(FontWeight::EXTRA_BOLD)
+                                            .text_size(rems(2.5))
+                                            .line_height(rems(2.75))
+                                            .overflow_x_hidden()
+                                            .pb(px(10.0))
+                                            .w_full()
+                                            .text_ellipsis()
+                                            .child(if self.playlist.is_liked_songs() {
+                                                div().child(tr!("LIKED_SONGS"))
+                                            } else {
+                                                div().child(self.playlist.name.clone())
+                                            }),
+                                    )
+                                    .child(
+                                        div()
                                             .flex()
+                                            .items_end()
+                                            .justify_between()
                                             .gap(px(12.0))
-                                            .items_stretch()
-                                            .when(!is_custom_sort, |this| {
-                                                this.child(
-                                                    button()
-                                                        .id("playlist-sort-direction-button")
-                                                        .size(ButtonSize::Large)
-                                                        .on_click(cx.listener(
-                                                            |this: &mut PlaylistView, _, _, cx| {
-                                                                this.toggle_sort_order(cx);
-                                                            },
-                                                        ))
-                                                        .child(
-                                                            icon(
-                                                                if Self::is_descending(
-                                                                    self.sort_method,
-                                                                ) {
-                                                                    SORT_DESCENDING
-                                                                } else {
-                                                                    SORT_ASCENDING
-                                                                },
-                                                            )
-                                                            .text_color(theme.text_secondary)
-                                                            .size(px(20.0)),
+                                            .w_full()
+                                            .child(playback_controls(
+                                                "playlist",
+                                                !self.playlist_track_ids.is_empty(),
+                                                false,
+                                                false,
+                                                move |cx| {
+                                                    let playlist_track_ids = cx
+                                                        .get_playlist_tracks_sorted(
+                                                            playlist_id,
+                                                            current_sort,
                                                         )
-                                                        .tooltip(
-                                                            if Self::is_descending(self.sort_method)
-                                                            {
-                                                                build_tooltip(tr!("SORT_ASCENDING"))
-                                                            } else {
-                                                                build_tooltip(tr!(
-                                                                    "SORT_DESCENDING"
+                                                        .unwrap_or_default();
+                                                    let track_files = cx
+                                                        .get_playlist_track_files(playlist_id)
+                                                        .unwrap_or_default();
+
+                                                    playlist_track_ids
+                                                        .iter()
+                                                        .zip(track_files.iter())
+                                                        .map(|((_, track_id, album_id), path)| {
+                                                            QueueItemData::new(
+                                                                cx,
+                                                                path.into(),
+                                                                Some(*track_id),
+                                                                Some(*album_id),
+                                                            )
+                                                        })
+                                                        .collect()
+                                                },
+                                            ))
+                                            .child(
+                                                div()
+                                                    .ml_auto()
+                                                    .flex()
+                                                    .gap(px(12.0))
+                                                    .items_stretch()
+                                                    .when(!is_custom_sort, |this| {
+                                                        this.child(
+                                                            button()
+                                                                .id("playlist-sort-direction-button")
+                                                                .size(ButtonSize::Large)
+                                                                .on_click(cx.listener(
+                                                                    |this: &mut PlaylistView, _, _, cx| {
+                                                                        this.toggle_sort_order(cx);
+                                                                    },
                                                                 ))
-                                                            },
-                                                        ),
-                                                )
-                                            })
-                                            .child(sort_dropdown),
+                                                                .child(
+                                                                    icon(
+                                                                        if Self::is_descending(
+                                                                            self.sort_method,
+                                                                        ) {
+                                                                            SORT_DESCENDING
+                                                                        } else {
+                                                                            SORT_ASCENDING
+                                                                        },
+                                                                    )
+                                                                    .text_color(theme.text_secondary)
+                                                                    .size(px(20.0)),
+                                                                )
+                                                                .tooltip(
+                                                                    if Self::is_descending(self.sort_method)
+                                                                    {
+                                                                        build_tooltip(tr!("SORT_ASCENDING"))
+                                                                    } else {
+                                                                        build_tooltip(tr!(
+                                                                            "SORT_DESCENDING"
+                                                                        ))
+                                                                    },
+                                                                ),
+                                                        )
+                                                    })
+                                                    .child(sort_dropdown),
+                                            ),
                                     ),
                             ),
-                    ),
-            )
-            .child(
-                div()
-                    .id("playlist-list-container")
-                    .flex()
-                    .w_full()
-                    .h_full()
-                    .relative()
-                    .mt(px(18.0))
-                    .when(is_custom_sort, |this| {
-                        this.on_drag_move::<TrackDragData>(cx.listener(
-                            move |this: &mut PlaylistView,
-                                  event: &DragMoveEvent<TrackDragData>,
-                                  window,
-                                  cx| {
-                                let scroll_handle: ScrollableHandle =
-                                    this.scroll_handle.clone().into();
+                    )
+                    .child(
+                        div()
+                            .id("playlist-list-container")
+                            .flex()
+                            .w_full()
+                            .h_full()
+                            .relative()
+                            .mt(px(18.0))
+                            .when(is_custom_sort, |this| {
+                                this.on_drag_move::<TrackDragData>(cx.listener(
+                                    move |this: &mut PlaylistView,
+                                          event: &DragMoveEvent<TrackDragData>,
+                                          window,
+                                          cx| {
+                                        let scroll_handle: ScrollableHandle =
+                                            this.scroll_handle.clone().into();
 
-                                let scrolled = handle_track_drag_move(
-                                    this.drag_drop_manager.clone(),
-                                    scroll_handle,
-                                    event,
-                                    item_count,
-                                    cx,
-                                );
+                                        let scrolled = handle_track_drag_move(
+                                            this.drag_drop_manager.clone(),
+                                            scroll_handle,
+                                            event,
+                                            item_count,
+                                            cx,
+                                        );
 
-                                if scrolled {
-                                    let entity = cx.entity().downgrade();
-                                    let manager = this.drag_drop_manager.clone();
-                                    let scroll_handle: ScrollableHandle =
-                                        this.scroll_handle.clone().into();
+                                        if scrolled {
+                                            let entity = cx.entity().downgrade();
+                                            let manager = this.drag_drop_manager.clone();
+                                            let scroll_handle: ScrollableHandle =
+                                                this.scroll_handle.clone().into();
 
-                                    window.on_next_frame(move |window, cx| {
-                                        if let Some(entity) = entity.upgrade() {
-                                            entity.update(cx, |_, cx| {
-                                                Self::schedule_edge_scroll(
-                                                    manager,
-                                                    scroll_handle,
-                                                    window,
-                                                    cx,
-                                                );
+                                            window.on_next_frame(move |window, cx| {
+                                                if let Some(entity) = entity.upgrade() {
+                                                    entity.update(cx, |_, cx| {
+                                                        Self::schedule_edge_scroll(
+                                                            manager,
+                                                            scroll_handle,
+                                                            window,
+                                                            cx,
+                                                        );
+                                                    });
+                                                }
                                             });
                                         }
-                                    });
-                                }
 
-                                cx.notify();
-                            },
-                        ))
-                        .on_drop(cx.listener(
-                            move |this: &mut PlaylistView, drag_data: &TrackDragData, _, cx| {
-                                let playlist_track_ids = this.playlist_track_ids.clone();
-                                let playlist_id = this.playlist.id;
-
-                                handle_track_drop(
-                                    this.drag_drop_manager.clone(),
-                                    drag_data,
-                                    cx,
-                                    |from_idx, to_idx, cx| {
-                                        let item_id = playlist_track_ids[from_idx].0;
-
-                                        let new_position = if to_idx < playlist_track_ids.len() {
-                                            let target_item_id = playlist_track_ids[to_idx].0;
-                                            let target_item =
-                                                cx.get_playlist_item(target_item_id).unwrap();
-                                            target_item.position
-                                        } else {
-                                            let last_item_id =
-                                                playlist_track_ids[playlist_track_ids.len() - 1].0;
-                                            let last_item =
-                                                cx.get_playlist_item(last_item_id).unwrap();
-                                            last_item.position + 1
-                                        };
-
-                                        if let Err(e) = cx.move_playlist_item(item_id, new_position)
-                                        {
-                                            error!("Failed to move playlist item: {}", e);
-                                            return;
-                                        }
-
-                                        let tracker =
-                                            cx.global::<Models>().playlist_tracker.clone();
-                                        tracker.update(cx, |_, cx| {
-                                            cx.emit(PlaylistEvent::PlaylistUpdated(playlist_id));
-                                        });
+                                        cx.notify();
                                     },
-                                );
-                                cx.notify();
-                            },
-                        ))
-                    })
-                    .child(
-                        uniform_list("playlist-list", items_clone.len(), move |range, _, cx| {
-                            let start = range.start;
-                            let is_templ_render = range.start == 0 && range.end == 1;
+                                ))
+                                .on_drop(cx.listener(
+                                    move |this: &mut PlaylistView, drag_data: &TrackDragData, _, cx| {
+                                        let playlist_track_ids = this.playlist_track_ids.clone();
+                                        let playlist_id = this.playlist.id;
 
-                            let items = &items_clone[range];
-
-                            items
-                                .iter()
-                                .enumerate()
-                                .map(|(idx, item)| {
-                                    let idx = idx + start;
-
-                                    if !is_templ_render {
-                                        prune_views(&views_model, &render_counter, idx, cx);
-                                    }
-
-                                    let drag_drop_manager = drag_drop_manager.clone();
-                                    let list_id = list_id.clone();
-                                    let playlist_item_id = item.0;
-                                    let track_id = item.1;
-
-                                    div().h(px(PLAYLIST_ITEM_HEIGHT)).child(
-                                        create_or_retrieve_view(
-                                            &views_model,
-                                            idx,
-                                            move |cx| {
-                                                let track = cx.get_track_by_id(track_id).unwrap();
-                                                let track_title: SharedString =
-                                                    track.title.clone().into();
-                                                let track_path = track.location.clone();
-                                                let album_id = track.album_id;
-
-                                                let track_item = TrackItem::new(
-                                                    cx,
-                                                    Arc::try_unwrap(track).unwrap(),
-                                                    false,
-                                                    ArtistNameVisibility::Always,
-                                                    TrackItemLeftField::Art,
-                                                    Some(TrackPlaylistInfo {
-                                                        id: pl_id,
-                                                        item_id: playlist_item_id,
-                                                    }),
-                                                    false, // vinyl_numbering - not applicable for playlists
-                                                    None, // max_track_num - not needed for Art left field
-                                                    None, // queue_context - playlist uses pl_id instead
-                                                    true, // show_go_to_album
-                                                    true, // show_go_to_artist
-                                                );
-
-                                                PlaylistTrackItem::new(
-                                                    cx,
-                                                    track_item,
-                                                    idx,
-                                                    playlist_item_id,
-                                                    track_title,
-                                                    drag_drop_manager,
-                                                    list_id,
-                                                    track_id,
-                                                    album_id,
-                                                    track_path,
-                                                    is_custom_sort,
-                                                )
-                                            },
+                                        handle_track_drop(
+                                            this.drag_drop_manager.clone(),
+                                            drag_data,
                                             cx,
-                                        ),
-                                    )
+                                            |from_idx, to_idx, cx| {
+                                                let item_id = playlist_track_ids[from_idx].0;
+
+                                                let new_position = if to_idx < playlist_track_ids.len() {
+                                                    let target_item_id = playlist_track_ids[to_idx].0;
+                                                    let target_item =
+                                                        cx.get_playlist_item(target_item_id).unwrap();
+                                                    target_item.position
+                                                } else {
+                                                    let last_item_id =
+                                                        playlist_track_ids[playlist_track_ids.len() - 1].0;
+                                                    let last_item =
+                                                        cx.get_playlist_item(last_item_id).unwrap();
+                                                    last_item.position + 1
+                                                };
+
+                                                if let Err(e) = cx.move_playlist_item(item_id, new_position)
+                                                {
+                                                    error!("Failed to move playlist item: {}", e);
+                                                    return;
+                                                }
+
+                                                let tracker =
+                                                    cx.global::<Models>().playlist_tracker.clone();
+                                                tracker.update(cx, |_, cx| {
+                                                    cx.emit(PlaylistEvent::PlaylistUpdated(playlist_id));
+                                                });
+                                            },
+                                        );
+                                        cx.notify();
+                                    },
+                                ))
+                            })
+                            .child(
+                                uniform_list("playlist-list", items_clone.len(), move |range, _, cx| {
+                                    let start = range.start;
+                                    let is_templ_render = range.start == 0 && range.end == 1;
+
+                                    let items = &items_clone[range];
+
+                                    items
+                                        .iter()
+                                        .enumerate()
+                                        .map(|(idx, item)| {
+                                            let idx = idx + start;
+
+                                            if !is_templ_render {
+                                                prune_views(&views_model, &render_counter, idx, cx);
+                                            }
+
+                                            let drag_drop_manager = drag_drop_manager.clone();
+                                            let list_id = list_id.clone();
+                                            let playlist_item_id = item.0;
+                                            let track_id = item.1;
+
+                                            div().h(px(PLAYLIST_ITEM_HEIGHT)).child(
+                                                create_or_retrieve_view(
+                                                    &views_model,
+                                                    idx,
+                                                    move |cx| {
+                                                        let track = cx.get_track_by_id(track_id).unwrap();
+                                                        let track_title: SharedString =
+                                                            track.title.clone().into();
+                                                        let track_path = track.location.clone();
+                                                        let album_id = track.album_id;
+
+                                                        let track_item = TrackItem::new(
+                                                            cx,
+                                                            Arc::try_unwrap(track).unwrap(),
+                                                            false,
+                                                            ArtistNameVisibility::Always,
+                                                            TrackItemLeftField::Art,
+                                                            Some(TrackPlaylistInfo {
+                                                                id: pl_id,
+                                                                item_id: playlist_item_id,
+                                                            }),
+                                                            false, // vinyl_numbering - not applicable for playlists
+                                                            None, // max_track_num - not needed for Art left field
+                                                            None, // queue_context - playlist uses pl_id instead
+                                                            true, // show_go_to_album
+                                                            true, // show_go_to_artist
+                                                        );
+
+                                                        PlaylistTrackItem::new(
+                                                            cx,
+                                                            track_item,
+                                                            idx,
+                                                            playlist_item_id,
+                                                            track_title,
+                                                            drag_drop_manager,
+                                                            list_id,
+                                                            track_id,
+                                                            album_id,
+                                                            track_path,
+                                                            is_custom_sort,
+                                                        )
+                                                    },
+                                                    cx,
+                                                ),
+                                            )
+                                        })
+                                        .collect()
                                 })
-                                .collect()
-                        })
-                        .w_full()
-                        .h_full()
-                        .flex()
-                        .flex_col()
-                        .border_color(theme.border_color)
-                        .border_t_1()
-                        .track_scroll(&scroll_handle),
-                    )
-                    .child(floating_scrollbar("playlist", scroll_handle, RightPad::Pad)),
+                                .w_full()
+                                .h_full()
+                                .flex()
+                                .flex_col()
+                                .border_color(theme.border_color)
+                                .border_t_1()
+                                .track_scroll(&scroll_handle),
+                            )
+                            .child(floating_scrollbar("playlist", scroll_handle, RightPad::Pad)),
+                    ),
             )
     }
 }

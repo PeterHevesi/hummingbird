@@ -23,6 +23,7 @@ use crate::{
         },
         library::{
             ViewSwitchMessage,
+            navigation::{NavigationDisplayMode, NavigationView},
             track_listing::{ArtistNameVisibility, TrackListing},
         },
         models::{Models, PlaybackInfo},
@@ -34,6 +35,7 @@ use crate::{
 const RELEASE_SCROLL_ANIMATION_DURATION: Duration = Duration::from_millis(250);
 
 pub struct ReleaseView {
+    navigation_view: Entity<NavigationView>,
     album: Arc<Album>,
     artist_name: Option<DBString>,
     tracks: Arc<Vec<Track>>,
@@ -47,7 +49,13 @@ pub struct ReleaseView {
 }
 
 impl ReleaseView {
-    pub(super) fn new(cx: &mut App, album_id: i64, target_track_id: Option<i64>) -> Entity<Self> {
+    pub(super) fn new(
+        cx: &mut App,
+        album_id: i64,
+        target_track_id: Option<i64>,
+        view_switch_model: Entity<super::NavigationHistory>,
+        navigation_display_mode: NavigationDisplayMode,
+    ) -> Entity<Self> {
         cx.new(|cx| {
             // TODO: error handling
             let album = cx
@@ -104,6 +112,11 @@ impl ReleaseView {
             });
 
             ReleaseView {
+                navigation_view: NavigationView::new(
+                    cx,
+                    view_switch_model.clone(),
+                    navigation_display_mode,
+                ),
                 album,
                 artist_name,
                 tracks,
@@ -384,40 +397,50 @@ impl Render for ReleaseView {
         div()
             .image_cache(hummingbird_cache(("release", self.album.id as u64), 1))
             .flex()
+            .flex_col()
             .w_full()
             .max_h_full()
             .relative()
             .overflow_hidden()
-            .mt(px(10.0))
-            .border_t_1()
-            .border_color(theme.border_color)
             .when(!full_width, |this| this.max_w(px(TABLE_MAX_WIDTH)))
+            .child(self.navigation_view.clone())
             .child(
                 div()
-                    .id("release-view")
-                    .overflow_y_scroll()
-                    .track_scroll(&scroll_handle)
+                    .flex()
                     .w_full()
-                    .flex_shrink()
-                    .overflow_x_hidden()
-                    .child(self.render_header(
-                        theme,
-                        has_available_tracks,
-                        current_track_in_album,
-                        is_playing,
-                    ))
-                    .children(self.track_listing.track_elements())
-                    .when(
-                        self.release_info.is_some()
-                            || self.album.release_date.is_some()
-                            || self.album.isrc.is_some(),
-                        |this| this.child(self.render_footer(theme)),
-                    ),
+                    .max_h_full()
+                    .relative()
+                    .overflow_hidden()
+                    .mt(px(10.0))
+                    .border_t_1()
+                    .border_color(theme.border_color)
+                    .child(
+                        div()
+                            .id("release-view")
+                            .overflow_y_scroll()
+                            .track_scroll(&scroll_handle)
+                            .w_full()
+                            .flex_shrink()
+                            .overflow_x_hidden()
+                            .child(self.render_header(
+                                theme,
+                                has_available_tracks,
+                                current_track_in_album,
+                                is_playing,
+                            ))
+                            .children(self.track_listing.track_elements())
+                            .when(
+                                self.release_info.is_some()
+                                    || self.album.release_date.is_some()
+                                    || self.album.isrc.is_some(),
+                                |this| this.child(self.render_footer(theme)),
+                            ),
+                    )
+                    .child(floating_scrollbar(
+                        "release_scrollbar",
+                        scroll_handle,
+                        RightPad::Pad,
+                    )),
             )
-            .child(floating_scrollbar(
-                "release_scrollbar",
-                scroll_handle,
-                RightPad::Pad,
-            ))
     }
 }

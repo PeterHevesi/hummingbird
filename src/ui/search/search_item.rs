@@ -169,8 +169,7 @@ impl PaletteItem for SearchPaletteItem {
                 }
             }
             SearchPaletteItem::Track { id, .. } => {
-                let (show_add_to, _) =
-                    add_to_playlist_state("pi_context_add_to", *id, window, cx);
+                let (show_add_to, _) = add_to_playlist_state("pi_context_add_to", *id, window, cx);
                 let track =
                     window.use_keyed_state(("pi_context_track", *id as usize), cx, |_, cx| {
                         cx.get_track_by_id(*id)
@@ -202,8 +201,7 @@ impl PaletteItem for SearchPaletteItem {
     fn context_menu_overlay(&self, window: &mut Window, cx: &mut App) -> Option<impl IntoElement> {
         match self {
             SearchPaletteItem::Track { id, .. } => {
-                let (_, add_to) =
-                    add_to_playlist_state("pi_context_add_to", *id, window, cx);
+                let (_, add_to) = add_to_playlist_state("pi_context_add_to", *id, window, cx);
                 Some(add_to.into_any_element())
             }
             _ => None,

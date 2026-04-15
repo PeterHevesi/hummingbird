@@ -12,16 +12,30 @@ use crate::{
 
 use super::{NavigationHistory, ViewSwitchMessage};
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum NavigationDisplayMode {
+    Visible,
+    Spacer,
+}
+
+impl NavigationDisplayMode {
+    pub(super) fn shows_buttons(self) -> bool {
+        matches!(self, Self::Visible)
+    }
+}
+
 pub(super) struct NavigationView {
     view_switcher_model: Entity<NavigationHistory>,
     current_message: ViewSwitchMessage,
     description: Option<SharedString>,
+    display_mode: NavigationDisplayMode,
 }
 
 impl NavigationView {
     pub(super) fn new(
         cx: &mut App,
         view_switcher_model: Entity<NavigationHistory>,
+        display_mode: NavigationDisplayMode,
     ) -> Entity<Self> {
         cx.new(|cx| {
             let current_message = view_switcher_model.read(cx).current();
@@ -49,13 +63,33 @@ impl NavigationView {
                 view_switcher_model,
                 current_message,
                 description: None,
+                display_mode,
             }
         })
+    }
+
+    pub(super) fn set_display_mode(
+        &mut self,
+        display_mode: NavigationDisplayMode,
+        cx: &mut Context<Self>,
+    ) {
+        if self.display_mode != display_mode {
+            self.display_mode = display_mode;
+            cx.notify();
+        }
+    }
+
+    pub(super) fn height() -> Pixels {
+        px(38.0)
     }
 }
 
 impl Render for NavigationView {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        if !self.display_mode.shows_buttons() {
+            return div().w_full().h(Self::height());
+        }
+
         let can_go_back = self.view_switcher_model.read(cx).can_go_back();
         let can_go_forward = self.view_switcher_model.read(cx).can_go_forward();
 

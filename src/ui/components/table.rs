@@ -17,11 +17,9 @@ use crate::{
         components::{
             context::context,
             drag_drop::DragPreview,
-            icons::{CHEVRON_DOWN, CHEVRON_UP, GRID, GRID_INACTIVE, LIST, LIST_INACTIVE, icon},
+            icons::{CHEVRON_DOWN, CHEVRON_UP, icon},
             menu::{menu, menu_check_item},
-            nav_button::nav_button,
             scrollbar::{RightPad, floating_scrollbar},
-            tooltip::build_tooltip,
             uniform_grid::uniform_grid,
         },
         models::Models,
@@ -29,7 +27,6 @@ use crate::{
         util::{create_or_retrieve_view, prune_views},
     },
 };
-use cntp_i18n::tr;
 use column_resize_handle::column_resize_handle;
 use gpui::{prelude::FluentBuilder, *};
 use indexmap::IndexMap;
@@ -226,6 +223,17 @@ where
             TableViewMode::Grid => self.grid_scroll_handle.0.borrow().base_handle.offset(),
         };
         (-offset.y).into()
+    }
+
+    pub fn get_view_mode(&self, cx: &App) -> TableViewMode {
+        *self.view_mode.read(cx)
+    }
+
+    pub fn set_view_mode(&mut self, view_mode: TableViewMode, cx: &mut App) {
+        self.view_mode.update(cx, |mode, cx| {
+            *mode = view_mode;
+            cx.notify();
+        });
     }
 
     pub fn get_items(&self) -> Option<Arc<Vec<T::Identifier>>> {
@@ -575,59 +583,6 @@ where
             .with(header)
             .child(div().bg(theme.elevated_background).child(column_menu));
 
-        let title_bar = div()
-            .w_full()
-            .pb(px(10.0))
-            .px(px(18.0))
-            .flex()
-            .justify_between()
-            .items_center()
-            .child(
-                div()
-                    .line_height(px(26.0))
-                    .font_weight(FontWeight::BOLD)
-                    .text_size(px(26.0))
-                    .pb(px(4.0))
-                    .child(T::get_table_name()),
-            )
-            .when(T::supports_grid_view(), |div_el| {
-                let is_grid = view_mode == TableViewMode::Grid;
-
-                div_el.child(
-                    div()
-                        .flex()
-                        .gap_1()
-                        .child(
-                            nav_button("list_toggle", if !is_grid { LIST } else { LIST_INACTIVE })
-                                .on_click(cx.listener(move |this, _, _, cx| {
-                                    this.view_mode.update(cx, |mode, cx| {
-                                        *mode = TableViewMode::List;
-                                        cx.notify();
-                                    });
-                                }))
-                                .when(!is_grid, |this| {
-                                    this.bg(theme.nav_button_pressed)
-                                        .border_color(theme.nav_button_pressed_border)
-                                })
-                                .tooltip(build_tooltip(tr!("LIST_VIEW", "List View"))),
-                        )
-                        .child(
-                            nav_button("grid_toggle", if is_grid { GRID } else { GRID_INACTIVE })
-                                .on_click(cx.listener(move |this, _, _, cx| {
-                                    this.view_mode.update(cx, |mode, cx| {
-                                        *mode = TableViewMode::Grid;
-                                        cx.notify();
-                                    });
-                                }))
-                                .when(is_grid, |this| {
-                                    this.bg(theme.nav_button_pressed)
-                                        .border_color(theme.nav_button_pressed_border)
-                                })
-                                .tooltip(build_tooltip(tr!("GRID_VIEW", "Grid View"))),
-                        ),
-                )
-            });
-
         div()
             .id(T::get_table_name())
             .overflow_x_scroll()
@@ -636,7 +591,6 @@ where
             .flex_col()
             .w_full()
             .h_full()
-            .child(title_bar)
             .when(view_mode == TableViewMode::List, |this| {
                 this.child(header_with_context)
             })

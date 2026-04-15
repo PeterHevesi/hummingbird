@@ -3,7 +3,7 @@ use artist_detail_view::ArtistDetailView;
 use artist_view::ArtistView;
 use cntp_i18n::tr;
 use gpui::{prelude::FluentBuilder, *};
-use navigation::NavigationView;
+pub(crate) use navigation::NavigationDisplayMode;
 use release_view::ReleaseView;
 use tracing::debug;
 use track_view::TrackView;
@@ -44,6 +44,7 @@ mod navigation;
 pub mod playlist_view;
 mod release_view;
 mod sidebar;
+mod table_view_header;
 mod track_listing;
 mod track_view;
 mod update_playlist;
@@ -248,6 +249,31 @@ impl LibraryView {
             LibraryView::ArtistDetail(_) => "artists",
         }
     }
+
+    fn set_navigation_display_mode(
+        &self,
+        navigation_display_mode: NavigationDisplayMode,
+        cx: &mut App,
+    ) {
+        match self {
+            LibraryView::Album(view) => {
+                view.update(cx, |view, cx| {
+                    view.set_navigation_display_mode(navigation_display_mode, cx);
+                });
+            }
+            LibraryView::Tracks(view) => {
+                view.update(cx, |view, cx| {
+                    view.set_navigation_display_mode(navigation_display_mode, cx);
+                });
+            }
+            LibraryView::Artists(view) => {
+                view.update(cx, |view, cx| {
+                    view.set_navigation_display_mode(navigation_display_mode, cx);
+                });
+            }
+            LibraryView::Release(_) | LibraryView::Playlist(_) | LibraryView::ArtistDetail(_) => {}
+        }
+    }
 }
 
 pub struct Library {
@@ -255,7 +281,6 @@ pub struct Library {
     left_view: Option<LibraryView>,
     right_view: Option<LibraryView>,
     section: LibrarySection,
-    navigation_view: Entity<NavigationView>,
     sidebar: Entity<Sidebar>,
     show_update_playlist: Entity<bool>,
     update_playlist: Entity<UpdatePlaylist>,
@@ -311,30 +336,43 @@ fn make_view(
     cx: &mut App,
     model: &Entity<NavigationHistory>,
     scroll_state: &ScrollStateStorage,
+    navigation_display_mode: NavigationDisplayMode,
 ) -> LibraryView {
     match message {
         ViewSwitchMessage::Albums => LibraryView::Album(AlbumView::new(
             cx,
             model.clone(),
+            navigation_display_mode,
             scroll_state.album_view_scroll,
         )),
         ViewSwitchMessage::Tracks => LibraryView::Tracks(TrackView::new(
             cx,
             model.clone(),
+            navigation_display_mode,
             scroll_state.track_view_scroll,
         )),
         ViewSwitchMessage::Artists => LibraryView::Artists(ArtistView::new(
             cx,
             model.clone(),
             scroll_state.artist_view_scroll,
+            navigation_display_mode,
         )),
-        ViewSwitchMessage::Release(id, target_track_id) => {
-            LibraryView::Release(ReleaseView::new(cx, *id, *target_track_id))
+        ViewSwitchMessage::Release(id, target_track_id) => LibraryView::Release(ReleaseView::new(
+            cx,
+            *id,
+            *target_track_id,
+            model.clone(),
+            navigation_display_mode,
+        )),
+        ViewSwitchMessage::Artist(id) => LibraryView::ArtistDetail(ArtistDetailView::new(
+            cx,
+            *id,
+            model.clone(),
+            navigation_display_mode,
+        )),
+        ViewSwitchMessage::Playlist(id) => {
+            LibraryView::Playlist(PlaylistView::new(cx, *id, navigation_display_mode))
         }
-        ViewSwitchMessage::Artist(id) => {
-            LibraryView::ArtistDetail(ArtistDetailView::new(cx, *id, model.clone()))
-        }
-        ViewSwitchMessage::Playlist(id) => LibraryView::Playlist(PlaylistView::new(cx, *id)),
         ViewSwitchMessage::Back => panic!("improper use of make_view (cannot make Back)"),
         ViewSwitchMessage::Forward => panic!("improper use of make_view (cannot make Forward)"),
         ViewSwitchMessage::Refresh => panic!("improper use of make_view (cannot make Refresh)"),
@@ -347,7 +385,13 @@ impl Library {
             let switcher_model = cx.global::<Models>().switcher_model.clone();
             let scroll_state = ScrollStateStorage::default();
             let initial_message = switcher_model.read(cx).current();
-            let view = make_view(&initial_message, cx, &switcher_model, &scroll_state);
+            let view = make_view(
+                &initial_message,
+                cx,
+                &switcher_model,
+                &scroll_state,
+                NavigationDisplayMode::Visible,
+            );
             let section =
                 LibrarySection::from_message(&initial_message).unwrap_or(LibrarySection::Albums);
 
@@ -385,7 +429,13 @@ impl Library {
                                 if let Some(s) = LibrarySection::from_message(&dest) {
                                     this.section = s;
                                 }
-                                make_view(&dest, cx, &m, &this.scroll_state)
+                                make_view(
+                                    &dest,
+                                    cx,
+                                    &m,
+                                    &this.scroll_state,
+                                    NavigationDisplayMode::Visible,
+                                )
                             } else {
                                 this.view.clone()
                             }
@@ -404,7 +454,13 @@ impl Library {
                                 if let Some(s) = LibrarySection::from_message(&dest) {
                                     this.section = s;
                                 }
-                                make_view(&dest, cx, &m, &this.scroll_state)
+                                make_view(
+                                    &dest,
+                                    cx,
+                                    &m,
+                                    &this.scroll_state,
+                                    NavigationDisplayMode::Visible,
+                                )
                             } else {
                                 this.view.clone()
                             }
@@ -412,7 +468,13 @@ impl Library {
 
                         ViewSwitchMessage::Refresh => {
                             let current = m.read(cx).current();
-                            make_view(&current, cx, &m, &this.scroll_state)
+                            make_view(
+                                &current,
+                                cx,
+                                &m,
+                                &this.scroll_state,
+                                NavigationDisplayMode::Visible,
+                            )
                         }
 
                         _ => {
@@ -425,7 +487,13 @@ impl Library {
                                 cx.notify();
                             });
 
-                            make_view(message, cx, &m, &this.scroll_state)
+                            make_view(
+                                message,
+                                cx,
+                                &m,
+                                &this.scroll_state,
+                                NavigationDisplayMode::Visible,
+                            )
                         }
                     };
 
@@ -451,12 +519,25 @@ impl Library {
                             };
 
                             if needs_new_left {
-                                this.left_view = left_msg
-                                    .as_ref()
-                                    .map(|lm| make_view(lm, cx, &m, &this.scroll_state));
+                                this.left_view = left_msg.as_ref().map(|lm| {
+                                    make_view(
+                                        lm,
+                                        cx,
+                                        &m,
+                                        &this.scroll_state,
+                                        NavigationDisplayMode::Spacer,
+                                    )
+                                });
+                            }
+
+                            if let Some(left_view) = &this.left_view {
+                                left_view
+                                    .set_navigation_display_mode(NavigationDisplayMode::Spacer, cx);
                             }
                         } else {
                             // Key page: show full-width in left pane, clear right
+                            this.view
+                                .set_navigation_display_mode(NavigationDisplayMode::Visible, cx);
                             this.left_view = Some(this.view.clone());
                             this.right_view = None;
                         }
@@ -503,7 +584,6 @@ impl Library {
             cx.observe(&settings, |_, _, cx| cx.notify()).detach();
 
             Library {
-                navigation_view: NavigationView::new(cx, switcher_model.clone()),
                 sidebar: Sidebar::new(cx, switcher_model.clone()),
                 view,
                 left_view: None,
@@ -560,7 +640,6 @@ impl Render for Library {
                 .flex_shrink()
                 .mr_auto()
                 .overflow_hidden()
-                .child(self.navigation_view.clone())
                 .child(render_library_view(view))
                 .into_any_element()
         };
@@ -606,8 +685,7 @@ impl Render for Library {
                                 .h_full()
                                 .flex()
                                 .flex_col()
-                                .overflow_hidden() // based on navigation bar height (10px pt + 28px button)
-                                .child(div().h(px(38.0)).flex_shrink_0())
+                                .overflow_hidden()
                                 .child(render_library_view(left)),
                         ),
                 )
@@ -619,7 +697,6 @@ impl Render for Library {
                         .flex_col()
                         .flex_shrink()
                         .overflow_hidden()
-                        .child(self.navigation_view.clone())
                         .child(render_library_view(right)),
                 )
                 .into_any_element()

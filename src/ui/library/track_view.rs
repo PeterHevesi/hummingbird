@@ -15,7 +15,11 @@ use crate::{
     ui::{
         availability::is_track_path_available,
         components::table::{Table, TableEvent, table_data::TABLE_MAX_WIDTH},
-        library::context_menus::{TrackContextMenuContext, play_from_track},
+        library::{
+            context_menus::{TrackContextMenuContext, play_from_track},
+            navigation::{NavigationDisplayMode, NavigationView},
+            table_view_header::TableViewHeader,
+        },
         models::Models,
     },
 };
@@ -24,13 +28,15 @@ use super::NavigationHistory;
 
 #[derive(Clone)]
 pub struct TrackView {
+    navigation_view: Entity<NavigationView>,
     table: Entity<Table<Track, TrackColumn>>,
 }
 
 impl TrackView {
     pub(super) fn new(
         cx: &mut App,
-        _view_switch_model: Entity<NavigationHistory>,
+        view_switch_model: Entity<NavigationHistory>,
+        navigation_display_mode: NavigationDisplayMode,
         initial_scroll_offset: Option<f32>,
     ) -> Entity<Self> {
         cx.new(|cx| {
@@ -134,12 +140,29 @@ impl TrackView {
             })
             .detach();
 
-            TrackView { table }
+            TrackView {
+                navigation_view: NavigationView::new(
+                    cx,
+                    view_switch_model.clone(),
+                    navigation_display_mode,
+                ),
+                table,
+            }
         })
     }
 
     pub fn get_scroll_offset(&self, cx: &App) -> f32 {
         self.table.read(cx).get_scroll_offset(cx)
+    }
+
+    pub fn set_navigation_display_mode(
+        &mut self,
+        navigation_display_mode: NavigationDisplayMode,
+        cx: &mut Context<Self>,
+    ) {
+        self.navigation_view.update(cx, |navigation_view, cx| {
+            navigation_view.set_display_mode(navigation_display_mode, cx);
+        });
     }
 }
 
@@ -157,8 +180,18 @@ impl Render for TrackView {
             .w_full()
             .h_full()
             .when(!full_width, |this: Div| this.max_w(px(TABLE_MAX_WIDTH)))
-            .pt(px(10.0))
-            .pb(px(0.0))
-            .child(self.table.clone())
+            .child(
+                div()
+                    .pb(px(0.0))
+                    .flex()
+                    .flex_col()
+                    .w_full()
+                    .h_full()
+                    .child(TableViewHeader::new(
+                        self.navigation_view.clone(),
+                        self.table.clone(),
+                    ))
+                    .child(self.table.clone()),
+            )
     }
 }
