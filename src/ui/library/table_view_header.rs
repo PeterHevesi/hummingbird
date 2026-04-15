@@ -13,16 +13,15 @@ use crate::ui::{
 
 use cntp_i18n::tr;
 
-use super::navigation::NavigationView;
+use super::{NavigationDisplayMode, NavigationHistory, navigation::NavigationView};
 
-#[derive(IntoElement)]
 pub struct TableViewHeader<T, C>
 where
     T: TableData<C> + 'static,
     C: crate::ui::components::table::table_data::Column + 'static,
 {
     navigation_view: Entity<NavigationView>,
-    table: Entity<Table<T, C>>,
+    _table: std::marker::PhantomData<(T, C)>,
 }
 
 impl<T, C> TableViewHeader<T, C>
@@ -30,50 +29,41 @@ where
     T: TableData<C> + 'static,
     C: crate::ui::components::table::table_data::Column + 'static,
 {
-    pub fn new(navigation_view: Entity<NavigationView>, table: Entity<Table<T, C>>) -> Self {
-        Self {
-            navigation_view,
-            table,
-        }
-    }
-}
+    pub fn new(
+        cx: &mut App,
+        view_switch_model: Entity<NavigationHistory>,
+        navigation_mode: NavigationDisplayMode,
+        table: Entity<Table<T, C>>,
+    ) -> Entity<Self> {
+        cx.new(|cx| {
+            let navigation_view = NavigationView::new(cx, view_switch_model, navigation_mode);
 
-impl<T, C> RenderOnce for TableViewHeader<T, C>
-where
-    T: TableData<C> + 'static,
-    C: crate::ui::components::table::table_data::Column + 'static,
-{
-    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
-        let theme = cx.global::<Theme>();
-        let view_mode = self.table.read(cx).get_view_mode(cx);
-        let is_grid = view_mode == TableViewMode::Grid;
-
-        div()
-            .w_full()
-            .flex()
-            .flex_col()
-            .child(self.navigation_view)
-            .child(
-                div()
-                    .pt(px(10.0))
-                    .pb(px(10.0))
-                    .px(px(18.0))
-                    .flex()
-                    .justify_between()
-                    .items_center()
-                    .child(
+            let table_for_left = table.clone();
+            navigation_view.update(cx, |nv, cx| {
+                nv.set_left(
+                    move |_, _| {
                         div()
                             .line_height(px(26.0))
                             .font_weight(FontWeight::BOLD)
-                            .text_size(px(26.0))
-                            .pb(px(4.0))
-                            .child(Table::<T, C>::get_table_name()),
-                    )
-                    .when(T::supports_grid_view(), |div_el| {
-                        let table_for_list = self.table.clone();
-                        let table_for_grid = self.table.clone();
+                            .text_size(px(16.0))
+                            .child(Table::<T, C>::get_table_name())
+                            .into_any_element()
+                    },
+                    cx,
+                );
 
-                        div_el.child(
+                if T::supports_grid_view() {
+                    let table_ref = table_for_left.clone();
+                    nv.set_right(
+                        move |_, cx| {
+                            let view_mode = table_ref.read(cx).get_view_mode(cx);
+                            let is_grid = view_mode == TableViewMode::Grid;
+                            let theme = cx.global::<Theme>();
+                            let nav_button_pressed = theme.nav_button_pressed;
+                            let nav_button_pressed_border = theme.nav_button_pressed_border;
+                            let table_for_list = table_ref.clone();
+                            let table_for_grid = table_ref.clone();
+
                             div()
                                 .flex()
                                 .gap_1()
@@ -83,13 +73,13 @@ where
                                         if !is_grid { LIST } else { LIST_INACTIVE },
                                     )
                                     .on_click(move |_, _, cx| {
-                                        table_for_list.update(cx, |table, cx| {
-                                            table.set_view_mode(TableViewMode::List, cx);
+                                        table_for_list.update(cx, |t, cx| {
+                                            t.set_view_mode(TableViewMode::List, cx);
                                         });
                                     })
                                     .when(!is_grid, |this| {
-                                        this.bg(theme.nav_button_pressed)
-                                            .border_color(theme.nav_button_pressed_border)
+                                        this.bg(nav_button_pressed)
+                                            .border_color(nav_button_pressed_border)
                                     })
                                     .tooltip(build_tooltip(tr!("LIST_VIEW", "List View"))),
                                 )
@@ -99,18 +89,47 @@ where
                                         if is_grid { GRID } else { GRID_INACTIVE },
                                     )
                                     .on_click(move |_, _, cx| {
-                                        table_for_grid.update(cx, |table, cx| {
-                                            table.set_view_mode(TableViewMode::Grid, cx);
+                                        table_for_grid.update(cx, |t, cx| {
+                                            t.set_view_mode(TableViewMode::Grid, cx);
                                         });
                                     })
                                     .when(is_grid, |this| {
-                                        this.bg(theme.nav_button_pressed)
-                                            .border_color(theme.nav_button_pressed_border)
+                                        this.bg(nav_button_pressed)
+                                            .border_color(nav_button_pressed_border)
                                     })
                                     .tooltip(build_tooltip(tr!("GRID_VIEW", "Grid View"))),
-                                ),
-                        )
-                    }),
-            )
+                                )
+                                .into_any_element()
+                        },
+                        cx,
+                    );
+                }
+            });
+
+            Self {
+                navigation_view,
+                _table: std::marker::PhantomData,
+            }
+        })
+    }
+
+    pub fn set_navigation_display_mode(
+        &mut self,
+        display_mode: NavigationDisplayMode,
+        cx: &mut Context<Self>,
+    ) {
+        self.navigation_view.update(cx, |nv, cx| {
+            nv.set_display_mode(display_mode, cx);
+        });
+    }
+}
+
+impl<T, C> Render for TableViewHeader<T, C>
+where
+    T: TableData<C> + 'static,
+    C: crate::ui::components::table::table_data::Column + 'static,
+{
+    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+        self.navigation_view.clone()
     }
 }

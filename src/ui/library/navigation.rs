@@ -3,14 +3,19 @@ use tracing::debug;
 
 use crate::{
     library::db::{AlbumMethod, LibraryAccess},
-    ui::components::{
-        icons::{ARROW_LEFT, ARROW_RIGHT},
-        nav_button::nav_button,
-        table::table_data::TABLE_MAX_WIDTH,
+    ui::{
+        components::{
+            icons::{ARROW_LEFT, ARROW_RIGHT},
+            nav_button::nav_button,
+            table::table_data::TABLE_MAX_WIDTH,
+        },
+        theme::Theme,
     },
 };
 
 use super::{NavigationHistory, ViewSwitchMessage};
+
+type MakeElement = dyn Fn(&mut Window, &mut Context<NavigationView>) -> AnyElement + 'static;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum NavigationDisplayMode {
@@ -29,6 +34,8 @@ pub(super) struct NavigationView {
     current_message: ViewSwitchMessage,
     description: Option<SharedString>,
     display_mode: NavigationDisplayMode,
+    left: Option<Box<MakeElement>>,
+    right: Option<Box<MakeElement>>,
 }
 
 impl NavigationView {
@@ -64,8 +71,28 @@ impl NavigationView {
                 current_message,
                 description: None,
                 display_mode,
+                left: None,
+                right: None,
             }
         })
+    }
+
+    pub(super) fn set_left(
+        &mut self,
+        f: impl Fn(&mut Window, &mut Context<Self>) -> AnyElement + 'static,
+        cx: &mut Context<Self>,
+    ) {
+        self.left = Some(Box::new(f));
+        cx.notify();
+    }
+
+    pub(super) fn set_right(
+        &mut self,
+        f: impl Fn(&mut Window, &mut Context<Self>) -> AnyElement + 'static,
+        cx: &mut Context<Self>,
+    ) {
+        self.right = Some(Box::new(f));
+        cx.notify();
     }
 
     pub(super) fn set_display_mode(
@@ -78,54 +105,78 @@ impl NavigationView {
             cx.notify();
         }
     }
-
-    pub(super) fn height() -> Pixels {
-        px(38.0)
-    }
 }
 
 impl Render for NavigationView {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        if !self.display_mode.shows_buttons() {
-            return div().w_full().h(Self::height());
-        }
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let shows_buttons = self.display_mode.shows_buttons();
 
-        let can_go_back = self.view_switcher_model.read(cx).can_go_back();
-        let can_go_forward = self.view_switcher_model.read(cx).can_go_forward();
+        let (can_go_back, can_go_forward, full_width) = if shows_buttons {
+            let can_go_back = self.view_switcher_model.read(cx).can_go_back();
+            let can_go_forward = self.view_switcher_model.read(cx).can_go_forward();
+            let settings = cx
+                .global::<crate::settings::SettingsGlobal>()
+                .model
+                .read(cx);
+            let full_width = settings.interface.effective_full_width();
+            (can_go_back, can_go_forward, full_width)
+        } else {
+            (false, false, false)
+        };
 
-        let settings = cx
-            .global::<crate::settings::SettingsGlobal>()
-            .model
-            .read(cx);
-        let full_width = settings.interface.effective_full_width();
+        let left_element = self.left.as_ref().map(|f| f(window, cx));
+        let right_element = self.right.as_ref().map(|f| f(window, cx));
+        let has_slots = left_element.is_some() || right_element.is_some();
 
-        div().flex().child(
-            div()
-                .flex()
-                .gap(px(4.0))
-                .w_full()
-                .when(!full_width, |this: Div| this.max_w(px(TABLE_MAX_WIDTH)))
-                .mr_auto()
-                .pl(px(10.0))
-                .pt(px(10.0))
-                .child(
-                    nav_button("back", ARROW_LEFT)
-                        .disabled(!can_go_back)
-                        .on_click(cx.listener(|this, _, _, cx| {
-                            this.view_switcher_model.update(cx, |_, cx| {
-                                cx.emit(ViewSwitchMessage::Back);
-                            })
-                        })),
+        let theme = cx.global::<Theme>();
+
+        div()
+            .flex()
+            .border_b_1()
+            .border_color(theme.border_color)
+            .w_full()
+            .when(shows_buttons, |d| {
+                d.child(
+                    div()
+                        .flex()
+                        .gap(px(4.0))
+                        .when(!full_width, |this: Div| this.max_w(px(TABLE_MAX_WIDTH)))
+                        .pl(px(12.0))
+                        .py(px(12.0))
+                        .child(
+                            nav_button("back", ARROW_LEFT)
+                                .disabled(!can_go_back)
+                                .on_click(cx.listener(|this, _, _, cx| {
+                                    this.view_switcher_model.update(cx, |_, cx| {
+                                        cx.emit(ViewSwitchMessage::Back);
+                                    })
+                                })),
+                        )
+                        .child(
+                            nav_button("forward", ARROW_RIGHT)
+                                .disabled(!can_go_forward)
+                                .on_click(cx.listener(|this, _, _, cx| {
+                                    this.view_switcher_model.update(cx, |_, cx| {
+                                        cx.emit(ViewSwitchMessage::Forward);
+                                    })
+                                })),
+                        ),
                 )
-                .child(
-                    nav_button("forward", ARROW_RIGHT)
-                        .disabled(!can_go_forward)
-                        .on_click(cx.listener(|this, _, _, cx| {
-                            this.view_switcher_model.update(cx, |_, cx| {
-                                cx.emit(ViewSwitchMessage::Forward);
-                            })
-                        })),
-                ),
-        )
+            })
+            .when(has_slots, |d| {
+                d.child(
+                    div()
+                        .min_h(px(52.0))
+                        .w_full()
+                        .pt(px(12.0))
+                        .pb(px(12.0))
+                        .px(px(12.0))
+                        .flex()
+                        .justify_between()
+                        .items_center()
+                        .when_some(left_element, |d, el| d.child(div().ml(px(6.0)).child(el)))
+                        .when_some(right_element, |d, el| d.child(el)),
+                )
+            })
     }
 }

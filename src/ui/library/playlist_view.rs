@@ -496,7 +496,7 @@ impl Render for PlaylistView {
             .child(self.navigation_view.clone())
             .child(
                 div()
-                    .pt(px(10.0))
+                    .pt(px(18.0))
                     .flex()
                     .overflow_x_hidden()
                     .flex_shrink()
@@ -801,8 +801,6 @@ impl Render for PlaylistView {
                                 .h_full()
                                 .flex()
                                 .flex_col()
-                                .border_color(theme.border_color)
-                                .border_t_1()
                                 .track_scroll(&scroll_handle),
                             )
                             .child(floating_scrollbar("playlist", scroll_handle, RightPad::Pad)),

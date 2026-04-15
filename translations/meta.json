@@ -199,7 +199,7 @@
   },
   "ARTIST_ALBUMS": {
     "context": "artist_detail_view.rs",
-    "definedIn": "src/ui/library/artist_detail_view.rs:518",
+    "definedIn": "src/ui/library/artist_detail_view.rs:515",
     "plural": false,
     "description": null
   },
@@ -385,7 +385,7 @@
   },
   "GRID_VIEW": {
     "context": "table_view_header.rs",
-    "definedIn": "src/ui/library/table_view_header.rs:110",
+    "definedIn": "src/ui/library/table_view_header.rs:100",
     "plural": false,
     "description": null
   },
@@ -535,7 +535,7 @@
   },
   "LIST_VIEW": {
     "context": "table_view_header.rs",
-    "definedIn": "src/ui/library/table_view_header.rs:94",
+    "definedIn": "src/ui/library/table_view_header.rs:84",
     "plural": false,
     "description": null
   },

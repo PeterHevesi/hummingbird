@@ -406,41 +406,30 @@ impl Render for ReleaseView {
             .child(self.navigation_view.clone())
             .child(
                 div()
-                    .flex()
+                    .id("release-view")
+                    .overflow_y_scroll()
+                    .track_scroll(&scroll_handle)
                     .w_full()
-                    .max_h_full()
-                    .relative()
-                    .overflow_hidden()
-                    .mt(px(10.0))
-                    .border_t_1()
-                    .border_color(theme.border_color)
-                    .child(
-                        div()
-                            .id("release-view")
-                            .overflow_y_scroll()
-                            .track_scroll(&scroll_handle)
-                            .w_full()
-                            .flex_shrink()
-                            .overflow_x_hidden()
-                            .child(self.render_header(
-                                theme,
-                                has_available_tracks,
-                                current_track_in_album,
-                                is_playing,
-                            ))
-                            .children(self.track_listing.track_elements())
-                            .when(
-                                self.release_info.is_some()
-                                    || self.album.release_date.is_some()
-                                    || self.album.isrc.is_some(),
-                                |this| this.child(self.render_footer(theme)),
-                            ),
-                    )
-                    .child(floating_scrollbar(
-                        "release_scrollbar",
-                        scroll_handle,
-                        RightPad::Pad,
-                    )),
+                    .flex_shrink()
+                    .overflow_x_hidden()
+                    .child(self.render_header(
+                        theme,
+                        has_available_tracks,
+                        current_track_in_album,
+                        is_playing,
+                    ))
+                    .children(self.track_listing.track_elements())
+                    .when(
+                        self.release_info.is_some()
+                            || self.album.release_date.is_some()
+                            || self.album.isrc.is_some(),
+                        |this| this.child(self.render_footer(theme)),
+                    ),
             )
+            .child(floating_scrollbar(
+                "release_scrollbar",
+                scroll_handle,
+                RightPad::Pad,
+            ))
     }
 }

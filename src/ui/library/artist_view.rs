@@ -15,14 +15,14 @@ use crate::{
 
 use super::{
     NavigationHistory, ViewSwitchMessage,
-    navigation::{NavigationDisplayMode, NavigationView},
+    navigation::NavigationDisplayMode,
     table_view_header::TableViewHeader,
 };
 
 #[derive(Clone)]
 pub struct ArtistView {
     table: Entity<Table<ArtistWithCounts, ArtistColumn>>,
-    navigation_view: Entity<NavigationView>,
+    table_view_header: Entity<TableViewHeader<ArtistWithCounts, ArtistColumn>>,
 }
 
 impl ArtistView {
@@ -74,8 +74,13 @@ impl ArtistView {
             .detach();
 
             ArtistView {
+                table_view_header: TableViewHeader::new(
+                    cx,
+                    navigation_model,
+                    navigation_display_mode,
+                    table.clone(),
+                ),
                 table,
-                navigation_view: NavigationView::new(cx, navigation_model, navigation_display_mode),
             }
         })
     }
@@ -89,8 +94,8 @@ impl ArtistView {
         navigation_display_mode: NavigationDisplayMode,
         cx: &mut Context<Self>,
     ) {
-        self.navigation_view.update(cx, |navigation_view, cx| {
-            navigation_view.set_display_mode(navigation_display_mode, cx);
+        self.table_view_header.update(cx, |header, cx| {
+            header.set_navigation_display_mode(navigation_display_mode, cx);
         });
     }
 }
@@ -109,10 +114,7 @@ impl Render for ArtistView {
             .w_full()
             .h_full()
             .when(!full_width, |this: Div| this.max_w(px(TABLE_MAX_WIDTH)))
-            .child(TableViewHeader::new(
-                self.navigation_view.clone(),
-                self.table.clone(),
-            ))
+            .child(self.table_view_header.clone())
             .child(self.table.clone())
     }
 }

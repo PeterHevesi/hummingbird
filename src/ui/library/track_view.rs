@@ -17,7 +17,7 @@ use crate::{
         components::table::{Table, TableEvent, table_data::TABLE_MAX_WIDTH},
         library::{
             context_menus::{TrackContextMenuContext, play_from_track},
-            navigation::{NavigationDisplayMode, NavigationView},
+            navigation::NavigationDisplayMode,
             table_view_header::TableViewHeader,
         },
         models::Models,
@@ -28,7 +28,7 @@ use super::NavigationHistory;
 
 #[derive(Clone)]
 pub struct TrackView {
-    navigation_view: Entity<NavigationView>,
+    table_view_header: Entity<TableViewHeader<Track, TrackColumn>>,
     table: Entity<Table<Track, TrackColumn>>,
 }
 
@@ -141,10 +141,11 @@ impl TrackView {
             .detach();
 
             TrackView {
-                navigation_view: NavigationView::new(
+                table_view_header: TableViewHeader::new(
                     cx,
                     view_switch_model.clone(),
                     navigation_display_mode,
+                    table.clone(),
                 ),
                 table,
             }
@@ -160,8 +161,8 @@ impl TrackView {
         navigation_display_mode: NavigationDisplayMode,
         cx: &mut Context<Self>,
     ) {
-        self.navigation_view.update(cx, |navigation_view, cx| {
-            navigation_view.set_display_mode(navigation_display_mode, cx);
+        self.table_view_header.update(cx, |header, cx| {
+            header.set_navigation_display_mode(navigation_display_mode, cx);
         });
     }
 }
@@ -187,10 +188,7 @@ impl Render for TrackView {
                     .flex_col()
                     .w_full()
                     .h_full()
-                    .child(TableViewHeader::new(
-                        self.navigation_view.clone(),
-                        self.table.clone(),
-                    ))
+                    .child(self.table_view_header.clone())
                     .child(self.table.clone()),
             )
     }

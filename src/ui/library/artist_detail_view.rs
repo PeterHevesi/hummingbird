@@ -443,9 +443,6 @@ impl Render for ArtistDetailView {
                     .max_h_full()
                     .relative()
                     .overflow_hidden()
-                    .mt(px(10.0))
-                    .border_t_1()
-                    .border_color(theme.border_color)
                     .child(
                         div()
                             .id("artist-detail-view")
