@@ -181,7 +181,7 @@
   },
   "ALBUMS": {
     "context": "sidebar.rs",
-    "definedIn": "src/ui/library/sidebar.rs:156",
+    "definedIn": "src/ui/library/sidebar.rs:153",
     "plural": false,
     "description": null
   },
@@ -193,7 +193,7 @@
   },
   "ARTISTS": {
     "context": "sidebar.rs",
-    "definedIn": "src/ui/library/sidebar.rs:176",
+    "definedIn": "src/ui/library/sidebar.rs:173",
     "plural": false,
     "description": null
   },
@@ -241,7 +241,7 @@
   },
   "COLLAPSE_SIDEBAR": {
     "context": "sidebar.rs",
-    "definedIn": "src/ui/library/sidebar.rs:122",
+    "definedIn": "src/ui/library/sidebar.rs:121",
     "plural": false,
     "description": null
   },
@@ -349,7 +349,7 @@
   },
   "EXPAND_SIDEBAR": {
     "context": "sidebar.rs",
-    "definedIn": "src/ui/library/sidebar.rs:124",
+    "definedIn": "src/ui/library/sidebar.rs:212",
     "plural": false,
     "description": null
   },
@@ -1081,13 +1081,13 @@
   },
   "STATS_TOTAL_LENGTH": {
     "context": "sidebar.rs",
-    "definedIn": "src/ui/library/sidebar.rs:227",
+    "definedIn": "src/ui/library/sidebar.rs:240",
     "plural": true,
     "description": null
   },
   "STATS_TRACKS": {
     "context": "sidebar.rs",
-    "definedIn": "src/ui/library/sidebar.rs:221",
+    "definedIn": "src/ui/library/sidebar.rs:234",
     "plural": true,
     "description": null
   },
@@ -1129,7 +1129,7 @@
   },
   "TRACKS": {
     "context": "sidebar.rs",
-    "definedIn": "src/ui/library/sidebar.rs:196",
+    "definedIn": "src/ui/library/sidebar.rs:193",
     "plural": false,
     "description": null
   },

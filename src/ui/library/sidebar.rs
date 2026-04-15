@@ -91,6 +91,7 @@ impl Render for Sidebar {
         };
         let sidebar_width = cx.global::<Models>().sidebar_width.clone();
         let sidebar_collapsed_entity = cx.global::<Models>().sidebar_collapsed.clone();
+        let sidebar_collapsed_entity_bottom = sidebar_collapsed_entity.clone();
         let collapsed = *sidebar_collapsed_entity.read(cx);
 
         let toggle_icon = if collapsed { SIDEBAR_INACTIVE } else { SIDEBAR };
@@ -113,24 +114,20 @@ impl Render for Sidebar {
                         window.dispatch_action(Box::new(Search), cx);
                     }),
             )
-            .child(
-                nav_button("sidebar-toggle", toggle_icon)
-                    .when_else(
-                        !collapsed,
-                        |this| {
-                            this.ml_auto()
-                                .tooltip(build_tooltip(tr!("COLLAPSE_SIDEBAR", "Collapse Sidebar")))
-                        },
-                        |this| this.tooltip(build_tooltip(tr!("EXPAND_SIDEBAR", "Expand Sidebar"))),
-                    )
-                    .w(px(38.0))
-                    .on_click(move |_, _, cx| {
-                        sidebar_collapsed_entity.update(cx, |v, cx| {
-                            *v = !*v;
-                            cx.notify();
-                        });
-                    }),
-            );
+            .when(!collapsed, |this| {
+                this.child(
+                    nav_button("sidebar-toggle", toggle_icon)
+                        .ml_auto()
+                        .tooltip(build_tooltip(tr!("COLLAPSE_SIDEBAR", "Collapse Sidebar")))
+                        .w(px(38.0))
+                        .on_click(move |_, _, cx| {
+                            sidebar_collapsed_entity.update(cx, |v, cx| {
+                                *v = !*v;
+                                cx.notify();
+                            });
+                        }),
+                )
+            });
 
         let sidebar_content = sidebar()
             .width(if collapsed {
@@ -208,6 +205,22 @@ impl Render for Sidebar {
             )
             .child(sidebar_separator())
             .child(self.playlists.clone())
+            .when(collapsed, |this| {
+                this.child(
+                    div().mt_auto().child(
+                        nav_button("sidebar-toggle", SIDEBAR_INACTIVE)
+                            .tooltip(build_tooltip(tr!("EXPAND_SIDEBAR", "Expand Sidebar")))
+                            .w(px(38.0))
+                            .h(px(38.0))
+                            .on_click(move |_, _, cx| {
+                                sidebar_collapsed_entity_bottom.update(cx, |v, cx| {
+                                    *v = !*v;
+                                    cx.notify();
+                                });
+                            }),
+                    ),
+                )
+            })
             .when(!collapsed, |this| {
                 this.child(
                     div()
