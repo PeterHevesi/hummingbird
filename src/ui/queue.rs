@@ -455,32 +455,26 @@ impl Render for Queue {
             .flex()
             .flex_col()
             .child(
-                div().flex().child(
-                    div().flex().w_full().child(
-                        nav_button("close", CROSS)
-                            .mt(px(9.0))
-                            .mr(px(9.0))
-                            .ml_auto()
-                            .on_click(cx.listener(|this: &mut Self, _, _, cx| {
-                                this.show_queue.update(cx, |v, _| *v = !(*v))
-                            }))
-                            .tooltip(build_tooltip(tr!("CLOSE", "Close"))),
-                    ),
-                ),
-            )
-            .child(
                 div()
                     .w_full()
-                    .pt(px(12.0))
-                    .pb(px(12.0))
-                    .px(px(12.0))
+                    .py(px(10.0))
+                    .pl(px(18.0))
+                    .pr(px(12.0))
                     .flex()
+                    .justify_between()
                     .child(
                         div()
                             .line_height(px(26.0))
                             .font_weight(FontWeight::BOLD)
-                            .text_size(px(26.0))
+                            .text_size(px(18.0))
                             .child(tr!("QUEUE_TITLE", "Queue")),
+                    )
+                    .child(
+                        nav_button("close", CROSS)
+                            .on_click(cx.listener(|this: &mut Self, _, _, cx| {
+                                this.show_queue.update(cx, |v, _| *v = !(*v))
+                            }))
+                            .tooltip(build_tooltip(tr!("CLOSE", "Close"))),
                     ),
             )
             .child(
