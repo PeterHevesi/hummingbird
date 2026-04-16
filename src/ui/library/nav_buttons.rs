@@ -27,7 +27,7 @@ impl RenderOnce for NavButtons {
             .occlude()
             .mt(px(1.0))
             .mr(px(6.0))
-            .gap(px(4.0))
+            .gap(px(2.0))
             .child(
                 nav_button("back", ARROW_LEFT)
                     .disabled(!can_go_back)

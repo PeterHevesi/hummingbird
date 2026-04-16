@@ -465,7 +465,7 @@ impl Render for Queue {
                     .child(
                         div()
                             .line_height(px(26.0))
-                            .font_weight(FontWeight::BOLD)
+                            .font_weight(FontWeight::SEMIBOLD)
                             .text_size(px(18.0))
                             .child(tr!("QUEUE_TITLE", "Queue")),
                     )

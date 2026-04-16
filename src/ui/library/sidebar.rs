@@ -12,7 +12,7 @@ use crate::settings::storage::DEFAULT_SIDEBAR_WIDTH;
 
 const COLLAPSED_SIDEBAR_WIDTH: Pixels = px(52.0);
 
-use crate::ui::components::icons::{MENU, SIDEBAR, SIDEBAR_INACTIVE};
+use crate::ui::components::icons::{MUSIC, SIDEBAR, SIDEBAR_INACTIVE};
 use crate::ui::components::tooltip::build_tooltip;
 use crate::{
     library::{db::LibraryAccess, types::TrackStats},
@@ -189,7 +189,7 @@ impl Render for Sidebar {
             )
             .child(
                 sidebar_item("tracks")
-                    .icon(MENU)
+                    .icon(MUSIC)
                     .when(!collapsed, |this| this.child(tr!("TRACKS", "Tracks")))
                     .when(collapsed, |this| {
                         this.collapsed().collapsed_label(tr!("TRACKS"))
