@@ -93,7 +93,7 @@ where
                 div()
                     .min_h(px(48.0))
                     .w_full()
-                    .py(px(10.0))
+                    .py(px(12.0))
                     .pl(px(18.0))
                     .pr(px(12.0))
                     .flex()
@@ -103,7 +103,7 @@ where
                         div()
                             .line_height(px(26.0))
                             .font_weight(FontWeight::SEMIBOLD)
-                            .text_size(px(18.0))
+                            .text_size(px(22.0))
                             .child(Table::<T, C>::get_table_name()),
                     )
                     .when_some(right, |d, el| d.child(el)),

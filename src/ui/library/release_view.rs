@@ -133,7 +133,7 @@ impl ReleaseView {
         is_playing: bool,
     ) -> impl IntoElement {
         div()
-            .pt(px(48.0))
+            .pt(px(52.0))
             .flex_shrink()
             .flex()
             .overflow_x_hidden()

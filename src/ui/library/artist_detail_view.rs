@@ -443,7 +443,7 @@ impl Render for ArtistDetailView {
                             .overflow_x_hidden()
                             .child(
                                 div()
-                                    .pt(px(48.0))
+                                    .pt(px(52.0))
                                     .px(px(18.0))
                                     .w_full()
                                     .child(

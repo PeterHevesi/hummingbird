@@ -488,7 +488,7 @@ impl Render for PlaylistView {
             .h_full()
             .child(
                 div()
-                    .pt(px(48.0))
+                    .pt(px(52.0))
                     .flex()
                     .overflow_x_hidden()
                     .flex_shrink()
