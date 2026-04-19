@@ -307,4 +307,17 @@ mod tests {
         );
         assert!(!settings.update.auto_update);
     }
+
+    #[test]
+    fn all_categories_deserialize_when_empty() {
+        let empty_settings = json!({
+            "scanning": {},
+            "playback": {},
+            "interface": {},
+            "services": {},
+            "update": {}
+        });
+
+        let _: Settings = serde_json::from_value(empty_settings).unwrap();
+    }
 }

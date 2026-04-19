@@ -39,7 +39,6 @@ use crate::{
 
 const PLAYLIST_SIDEBAR_LIST_ID: &str = "sidebar-playlists";
 const PLAYLIST_SIDEBAR_ITEM_HEIGHT: f32 = 55.0; // effective height is + 1 px because of gap
-const PLAYLIST_SIDEBAR_COLLAPSED_ITEM_HEIGHT: f32 = 37.0;
 
 pub struct PlaylistList {
     playlists: Arc<Vec<Playlist>>,
