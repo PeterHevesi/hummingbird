@@ -6,7 +6,6 @@ mod macos;
 mod windows;
 
 use gpui::{AppContext, Entity, Global};
-use tracing::info;
 
 use crate::playback::thread::PlaybackState;
 
