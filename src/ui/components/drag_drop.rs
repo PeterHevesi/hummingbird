@@ -430,6 +430,7 @@ pub fn handle_drag_move<V: 'static>(
     event: &DragMoveEvent<DragData>,
     item_count: usize,
     cx: &mut Context<V>,
+    reduced_motion: bool,
 ) -> bool {
     let drag_data = event.drag(cx);
     let config = manager.read(cx).config.clone();
@@ -450,7 +451,11 @@ pub fn handle_drag_move<V: 'static>(
     });
 
     let direction = get_edge_scroll_direction(mouse_pos.y, container_bounds, &config.scroll_config);
-    let scrolled = perform_edge_scroll(&scroll_handle, direction, &config.scroll_config);
+    let scrolled = if reduced_motion {
+        false
+    } else {
+        perform_edge_scroll(&scroll_handle, direction, &config.scroll_config)
+    };
 
     if !container_bounds.contains(&mouse_pos) {
         manager.update(cx, |m, _| m.state.clear_drop_target());
@@ -487,6 +492,7 @@ pub fn handle_track_drag_move<V: 'static>(
     event: &DragMoveEvent<TrackDragData>,
     item_count: usize,
     cx: &mut Context<V>,
+    reduced_motion: bool,
 ) -> bool {
     let drag_data = event.drag(cx);
     let config = manager.read(cx).config.clone();
@@ -516,7 +522,11 @@ pub fn handle_track_drag_move<V: 'static>(
     });
 
     let direction = get_edge_scroll_direction(mouse_pos.y, container_bounds, &config.scroll_config);
-    let scrolled = perform_edge_scroll(&scroll_handle, direction, &config.scroll_config);
+    let scrolled = if reduced_motion {
+        false
+    } else {
+        perform_edge_scroll(&scroll_handle, direction, &config.scroll_config)
+    };
 
     if !container_bounds.contains(&mouse_pos) {
         manager.update(cx, |m, _| m.state.clear_drop_target());
