@@ -49,6 +49,7 @@ pub struct PlaybackSettings {
     pub replaygain: ReplayGainSettings,
 
     /// Whether to prevent the system screensaver and sleep while playing.
+    #[serde(default)]
     pub prevent_idle: bool,
 }
 
