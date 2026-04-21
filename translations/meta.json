@@ -637,7 +637,7 @@
   },
   "NO_LYRICS": {
     "context": "lyrics.rs",
-    "definedIn": "src/ui/lyrics.rs:170",
+    "definedIn": "src/ui/lyrics.rs:184",
     "plural": false,
     "description": null
   },
