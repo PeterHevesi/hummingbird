@@ -13,7 +13,7 @@ use crate::{
                 calculate_drop_target, check_drag_cancelled, continue_edge_scroll,
                 get_edge_scroll_direction, handle_drag_move, handle_drop, perform_edge_scroll,
             },
-            icons::{CROSS, DISC, PLAYLIST_ADD, SHUFFLE, STAR, STAR_FILLED, TRASH, USERS, icon},
+            icons::{CROSS, DISC, PLAYLIST_ADD, STAR, STAR_FILLED, TRASH, USERS, icon},
             managed_image::{ManagedImageKey, managed_image},
             menu::{menu, menu_item, menu_separator},
             nav_button::nav_button,
@@ -384,7 +384,6 @@ impl Render for QueueItem {
 
 pub struct Queue {
     views_model: Entity<FxHashMap<usize, Entity<QueueItem>>>,
-    shuffling: Entity<bool>,
     show_queue: Entity<bool>,
     scroll_handle: UniformListScrollHandle,
     drag_drop_manager: Entity<DragDropListManager>,
@@ -431,16 +430,8 @@ impl Queue {
             })
             .detach();
 
-            let shuffling = cx.global::<PlaybackInfo>().shuffling.clone();
-
-            cx.observe(&shuffling, |_, _, cx| {
-                cx.notify();
-            })
-            .detach();
-
             Self {
                 views_model,
-                shuffling,
                 show_queue,
                 scroll_handle: UniformListScrollHandle::new(),
                 drag_drop_manager,
@@ -468,7 +459,6 @@ impl Render for Queue {
             .read()
             .expect("could not read queue")
             .len();
-        let shuffling = *self.shuffling.read(cx);
         let views_model = self.views_model.clone();
         let scroll_handle = self.scroll_handle.clone();
         let item_scroll_handle = scroll_handle.clone();

@@ -253,7 +253,7 @@
   },
   "CLEAR_QUEUE": {
     "context": "queue.rs",
-    "definedIn": "src/ui/queue.rs:527",
+    "definedIn": "src/ui/queue.rs:517",
     "plural": false,
     "description": null
   },
@@ -265,7 +265,7 @@
   },
   "CLOSE": {
     "context": "queue.rs",
-    "definedIn": "src/ui/queue.rs:538",
+    "definedIn": "src/ui/queue.rs:528",
     "plural": false,
     "description": null
   },
@@ -751,7 +751,7 @@
   },
   "QUEUE_TITLE": {
     "context": "queue.rs",
-    "definedIn": "src/ui/queue.rs:519",
+    "definedIn": "src/ui/queue.rs:509",
     "plural": false,
     "description": null
   },
@@ -1088,6 +1088,12 @@
   "SHOW_IN_FINDER": {
     "context": "context_menus.rs",
     "definedIn": "src/ui/library/context_menus.rs:184",
+    "plural": false,
+    "description": null
+  },
+  "SHUFFLE": {
+    "context": "playback_controls.rs",
+    "definedIn": "src/ui/components/playback_controls.rs:114",
     "plural": false,
     "description": null
   },
