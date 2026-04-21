@@ -182,7 +182,8 @@ impl Render for QueueItem {
                         .overflow_x_hidden()
                         .gap(px(11.0))
                         .h(px(QUEUE_ITEM_HEIGHT))
-                        .p(px(11.0))
+                        .px(px(17.0))
+                        .py(px(11.0))
                         // add extra padding when the scrollbar is always drawn
                         // 11px queue item pad + 4px scrollbar + 10px buffer
                         .when(scrollbar_always_visible, |div| div.pr(px(25.0)))
@@ -503,12 +504,13 @@ impl Render for Queue {
             .child(
                 div()
                     .w_full()
-                    .py(px(12.0))
-                    .pl(px(12.0))
+                    .py(px(11.0))
+                    .pl(px(18.0))
                     .pr(px(12.0))
                     .flex()
-                    .justify_between()
                     .items_center()
+                    .border_b_1()
+                    .border_color(theme.border_color)
                     .child(
                         div()
                             .line_height(px(26.0))
@@ -517,42 +519,23 @@ impl Render for Queue {
                             .child(tr!("QUEUE_TITLE", "Queue")),
                     )
                     .child(
-                        nav_button("close", CROSS)
-                            .on_click(cx.listener(|this: &mut Self, _, _, cx| {
-                                this.show_queue.update(cx, |v, _| *v = !(*v))
-                            }))
-                            .tooltip(build_tooltip(tr!("CLOSE", "Close"))),
-                    ),
-            )
-            .child(
-                div()
-                    .w_full()
-                    .flex()
-                    .border_t_1()
-                    .border_b_1()
-                    .border_color(theme.border_color)
-                    .child(
                         button()
-                            .style(ButtonStyle::MinimalNoRounding)
+                            .ml_auto()
+                            .style(ButtonStyle::Minimal)
                             .size(ButtonSize::Large)
                             .child(icon(TRASH).size(px(14.0)).my_auto())
                             .child(tr!("CLEAR_QUEUE", "Clear"))
-                            .w_full()
                             .id("clear-queue")
                             .on_click(|_, _, cx| {
                                 cx.global::<PlaybackInterface>().clear_queue();
                             }),
                     )
                     .child(
-                        button()
-                            .style(ButtonStyle::MinimalNoRounding)
-                            .size(ButtonSize::Large)
-                            .child(icon(SHUFFLE).size(px(14.0)).my_auto())
-                            .when(shuffling, |this| this.child(tr!("SHUFFLING", "Shuffling")))
-                            .when(!shuffling, |this| this.child(tr!("SHUFFLE", "Shuffle")))
-                            .w_full()
-                            .id("queue-shuffle")
-                            .on_click(|_, _, cx| cx.global::<PlaybackInterface>().toggle_shuffle()),
+                        nav_button("close", CROSS)
+                            .on_click(cx.listener(|this: &mut Self, _, _, cx| {
+                                this.show_queue.update(cx, |v, _| *v = !(*v))
+                            }))
+                            .tooltip(build_tooltip(tr!("CLOSE", "Close"))),
                     ),
             )
             .child(
