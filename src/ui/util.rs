@@ -1,3 +1,5 @@
+#[cfg(target_os = "windows")]
+use std::path::PathBuf;
 use std::{path::Path, sync::Arc};
 
 use globwalk::GlobWalkerBuilder;
