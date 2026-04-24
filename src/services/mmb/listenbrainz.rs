@@ -1,11 +1,8 @@
-use std::{
-    path::PathBuf,
-    sync::{Arc, LazyLock},
-};
+use std::{path::PathBuf, sync::Arc};
 
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
-use client::LastFMClient;
+use client::ListenBrainzClient;
 use gpui::SharedString;
 use tracing::{debug, warn};
 use types::Session;
@@ -17,31 +14,16 @@ use super::MediaMetadataBroadcastService;
 pub mod client;
 pub mod types;
 
-pub const MMBS_KEY: &str = "lastfm";
+pub const MMBS_KEY: &str = "listenbrainz";
 
 #[derive(Clone)]
-pub enum LastFMState {
+pub enum ListenBrainzState {
     Disconnected { error: Option<SharedString> },
-    AwaitingFinalization(String),
     Connected(Session),
 }
 
-pub fn is_available() -> bool {
-    LASTFM_CREDS.is_some()
-}
-
-pub static LASTFM_CREDS: LazyLock<Option<(&str, &str)>> = LazyLock::new(|| {
-    let key = std::env::var("LASTFM_API_KEY")
-        .map_or(None, |k| Some(&*k.leak()))
-        .or(option_env!("LASTFM_API_KEY"))?;
-    let secret = std::env::var("LASTFM_API_SECRET")
-        .map_or(None, |k| Some(&*k.leak()))
-        .or(option_env!("LASTFM_API_SECRET"))?;
-    Some((key, secret))
-});
-
-pub struct LastFM {
-    client: LastFMClient,
+pub struct ListenBrainz {
+    client: ListenBrainzClient,
     start_timestamp: Option<DateTime<Utc>>,
     accumulated_time: u64,
     duration: u64,
@@ -51,9 +33,9 @@ pub struct LastFM {
     enabled: bool,
 }
 
-impl LastFM {
-    pub fn new(client: LastFMClient, enabled: bool) -> Self {
-        LastFM {
+impl ListenBrainz {
+    pub fn new(client: ListenBrainzClient, enabled: bool) -> Self {
+        ListenBrainz {
             client,
             start_timestamp: None,
             accumulated_time: 0,
@@ -65,35 +47,34 @@ impl LastFM {
         }
     }
 
+    fn duration(&self) -> Option<u64> {
+        (self.duration > 0).then_some(self.duration)
+    }
+
     pub async fn scrobble(&mut self) {
         if let Some(info) = &self.metadata
             && let Some(artist) = &info.artist
             && let Some(track) = &info.name
+            && let Some(start_timestamp) = self.start_timestamp
             && let Err(err) = self
                 .client
-                .scrobble(
-                    artist,
-                    track,
-                    self.start_timestamp.unwrap(),
-                    info.album.as_deref(),
-                    None,
-                )
+                .scrobble(artist, track, start_timestamp, info, self.duration())
                 .await
         {
-            warn!(?err, "Could not scrobble: {err}");
+            warn!(?err, "Could not scrobble to ListenBrainz: {err}");
         };
     }
 }
 
 #[async_trait]
-impl MediaMetadataBroadcastService for LastFM {
+impl MediaMetadataBroadcastService for ListenBrainz {
     async fn new_track(&mut self, _: PathBuf) {
         if !self.enabled {
             return;
         }
 
         if self.should_scrobble {
-            debug!("attempting scrobble");
+            debug!("attempting ListenBrainz scrobble");
             self.scrobble().await;
         }
 
@@ -113,10 +94,10 @@ impl MediaMetadataBroadcastService for LastFM {
         };
         if let Err(e) = self
             .client
-            .now_playing(artist, track, info.album.as_deref(), None)
+            .now_playing(artist, track, &info, self.duration())
             .await
         {
-            warn!("Could not set now playing: {}", e)
+            warn!("Could not set ListenBrainz now playing: {}", e)
         }
 
         self.metadata = Some(info);
@@ -128,7 +109,7 @@ impl MediaMetadataBroadcastService for LastFM {
         }
 
         if self.should_scrobble && state != PlaybackState::Playing {
-            debug!("attempting scrobble");
+            debug!("attempting ListenBrainz scrobble");
             self.scrobble().await;
             self.should_scrobble = false;
         }
@@ -167,7 +148,11 @@ impl MediaMetadataBroadcastService for LastFM {
             return;
         }
 
-        debug!(from = self.enabled, to = enabled, "updating lastfm enabled");
+        debug!(
+            from = self.enabled,
+            to = enabled,
+            "updating ListenBrainz enabled"
+        );
 
         if !enabled {
             self.should_scrobble = false;
@@ -182,10 +167,10 @@ impl MediaMetadataBroadcastService for LastFM {
     }
 }
 
-impl Drop for LastFM {
+impl Drop for ListenBrainz {
     fn drop(&mut self) {
         if self.enabled && self.should_scrobble {
-            debug!("attempting scrobble before dropping LastFM, this will block");
+            debug!("attempting ListenBrainz scrobble before dropping, this will block");
             crate::RUNTIME.block_on(self.scrobble());
         }
     }
@@ -195,54 +180,53 @@ impl Drop for LastFM {
 mod tests {
     use super::*;
 
-    fn make_lastfm(enabled: bool) -> LastFM {
-        let client = LastFMClient::new("test-key".into(), "test-secret".into());
-        LastFM::new(client, enabled)
+    fn make_listenbrainz(enabled: bool) -> ListenBrainz {
+        let client = ListenBrainzClient::new("test-token".into());
+        ListenBrainz::new(client, enabled)
     }
 
     #[tokio::test]
     async fn set_enabled_false_clears_scrobble_state() {
-        let mut lastfm = make_lastfm(true);
-        lastfm.should_scrobble = true;
-        lastfm.accumulated_time = 100;
-        lastfm.duration = 200;
-        lastfm.last_position = 120;
-        lastfm.start_timestamp = Some(Utc::now());
+        let mut listenbrainz = make_listenbrainz(true);
+        listenbrainz.should_scrobble = true;
+        listenbrainz.accumulated_time = 100;
+        listenbrainz.duration = 200;
+        listenbrainz.last_position = 120;
+        listenbrainz.start_timestamp = Some(Utc::now());
 
-        lastfm.set_enabled(false).await;
+        listenbrainz.set_enabled(false).await;
 
-        assert!(!lastfm.enabled);
-        assert!(!lastfm.should_scrobble);
-        assert_eq!(lastfm.accumulated_time, 0);
-        assert_eq!(lastfm.duration, 0);
-        assert_eq!(lastfm.last_position, 0);
-        assert!(lastfm.start_timestamp.is_none());
+        assert!(!listenbrainz.enabled);
+        assert!(!listenbrainz.should_scrobble);
+        assert_eq!(listenbrainz.accumulated_time, 0);
+        assert_eq!(listenbrainz.duration, 0);
+        assert_eq!(listenbrainz.last_position, 0);
+        assert!(listenbrainz.start_timestamp.is_none());
     }
 
     #[tokio::test]
     async fn set_enabled_noop_preserves_state_when_unchanged() {
-        let mut lastfm = make_lastfm(true);
-        lastfm.should_scrobble = true;
-        lastfm.accumulated_time = 100;
+        let mut listenbrainz = make_listenbrainz(true);
+        listenbrainz.should_scrobble = true;
+        listenbrainz.accumulated_time = 100;
 
-        lastfm.set_enabled(true).await;
+        listenbrainz.set_enabled(true).await;
 
-        assert!(lastfm.should_scrobble);
-        assert_eq!(lastfm.accumulated_time, 100);
+        assert!(listenbrainz.should_scrobble);
+        assert_eq!(listenbrainz.accumulated_time, 100);
 
-        // Drop would otherwise try to RUNTIME.block_on(scrobble()) from inside the test runtime.
-        lastfm.should_scrobble = false;
+        listenbrainz.should_scrobble = false;
     }
 
     #[tokio::test]
     async fn disabled_mmbs_ignores_playback_events() {
-        let mut lastfm = make_lastfm(false);
+        let mut listenbrainz = make_listenbrainz(false);
 
-        lastfm.position_changed(50).await;
-        lastfm.duration_changed(200).await;
+        listenbrainz.position_changed(50).await;
+        listenbrainz.duration_changed(200).await;
 
-        assert_eq!(lastfm.accumulated_time, 0);
-        assert_eq!(lastfm.duration, 0);
-        assert!(!lastfm.should_scrobble);
+        assert_eq!(listenbrainz.accumulated_time, 0);
+        assert_eq!(listenbrainz.duration, 0);
+        assert!(!listenbrainz.should_scrobble);
     }
 }
