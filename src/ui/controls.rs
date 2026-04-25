@@ -13,7 +13,7 @@ use crate::{
                 REPEAT_ONCE, SHUFFLE, STAR, STAR_FILLED, VOLUME, VOLUME_OFF, icon,
             },
             managed_image::{ManagedImageKey, managed_image},
-            menu::{menu, menu_item},
+            menu::{menu, menu_check_item, menu_item},
             tooltip::build_tooltip,
             volume_tooltip::build_volume_tooltip,
         },
@@ -39,7 +39,7 @@ use super::{
         slider::slider,
     },
     constants::APP_ROUNDING,
-    global_actions::{Next, PlayPause, Previous},
+    global_actions::{Next, PlayPause, Previous, StopAfterCurrent},
     models::{Models, PlaybackInfo},
     theme::Theme,
 };
@@ -480,6 +480,8 @@ impl PlaybackSection {
             let info = cx.global::<PlaybackInfo>().clone();
             let state = info.playback_state.clone();
             let shuffling = info.shuffling.clone();
+            let repeating = info.repeating.clone();
+            let stop_after_current = info.stop_after_current.clone();
 
             cx.observe(&state, |_, _, cx| {
                 cx.notify();
@@ -487,6 +489,16 @@ impl PlaybackSection {
             .detach();
 
             cx.observe(&shuffling, |_, _, cx| {
+                cx.notify();
+            })
+            .detach();
+
+            cx.observe(&repeating, |_, _, cx| {
+                cx.notify();
+            })
+            .detach();
+
+            cx.observe(&stop_after_current, |_, _, cx| {
                 cx.notify();
             })
             .detach();
@@ -501,6 +513,7 @@ impl Render for PlaybackSection {
         let state = self.info.playback_state.read(cx);
         let shuffling = self.info.shuffling.read(cx);
         let repeating = *self.info.repeating.read(cx);
+        let stop_after_current = *self.info.stop_after_current.read(cx);
         let theme = cx.global::<Theme>();
         let always_repeat = cx
             .global::<SettingsGlobal>()
@@ -581,34 +594,64 @@ impl Render for PlaybackSection {
                             .tooltip(build_tooltip(tr!("PREVIOUS_TRACK", "Previous Track"))),
                     )
                     .child(
-                        div()
-                            .w(px(32.0))
-                            .h(px(28.0))
-                            .bg(theme.playback_button)
-                            .border_l(px(1.0))
-                            .border_r(px(1.0))
-                            .border_color(theme.playback_button_border)
-                            .flex()
-                            .items_center()
-                            .justify_center()
-                            .hover(|style| style.bg(theme.playback_button_hover).cursor_pointer())
-                            .id("header-play-button")
-                            .active(|style| style.bg(theme.playback_button_active))
-                            .on_mouse_down(MouseButton::Left, |_, window, cx| {
-                                cx.stop_propagation();
-                                window.prevent_default();
-                            })
-                            .on_click(|_, window, cx| {
-                                window.dispatch_action(Box::new(PlayPause), cx);
-                            })
-                            .when(*state == PlaybackState::Playing, |div| {
-                                div.child(icon(PAUSE).size(px(16.0)))
-                                    .tooltip(build_tooltip(tr!("PAUSE")))
-                            })
-                            .when(*state != PlaybackState::Playing, |div| {
-                                div.child(icon(PLAY).size(px(16.0)))
-                                    .tooltip(build_tooltip(tr!("PLAY")))
-                            }),
+                        context("header-play-button-context")
+                            .with(
+                                div()
+                                    .w(px(32.0))
+                                    .h(px(28.0))
+                                    .bg(theme.playback_button)
+                                    .border_l(px(1.0))
+                                    .border_r(px(1.0))
+                                    .border_color(theme.playback_button_border)
+                                    .relative()
+                                    .flex()
+                                    .items_center()
+                                    .justify_center()
+                                    .hover(|style| {
+                                        style.bg(theme.playback_button_hover).cursor_pointer()
+                                    })
+                                    .id("header-play-button")
+                                    .active(|style| style.bg(theme.playback_button_active))
+                                    .on_mouse_down(MouseButton::Left, |_, window, cx| {
+                                        cx.stop_propagation();
+                                        window.prevent_default();
+                                    })
+                                    .on_click(|_, window, cx| {
+                                        window.dispatch_action(Box::new(PlayPause), cx);
+                                    })
+                                    .when(*state == PlaybackState::Playing, |div| {
+                                        div.child(icon(PAUSE).size(px(16.0)))
+                                            .tooltip(build_tooltip(tr!("PAUSE")))
+                                    })
+                                    .when(*state != PlaybackState::Playing, |div| {
+                                        div.child(icon(PLAY).size(px(16.0)))
+                                            .tooltip(build_tooltip(tr!("PLAY")))
+                                    })
+                                    .when(stop_after_current, |this| {
+                                        this.child(
+                                            div()
+                                                .id("stop-after-current-indicator")
+                                                .absolute()
+                                                .top(px(3.0))
+                                                .right(px(3.0))
+                                                .size(px(6.0))
+                                                .rounded_full()
+                                                .bg(theme.stop_after_current_indicator)
+                                                .tooltip(build_tooltip(tr!(
+                                                    "STOP_AFTER_CURRENT_TOOLTIP",
+                                                    "Will stop after current track"
+                                                ))),
+                                        )
+                                    }),
+                            )
+                            .child(menu().item(menu_check_item(
+                                "stop-after-current-menu-item",
+                                stop_after_current,
+                                tr!("ACTION_STOP_AFTER_CURRENT"),
+                                |_, window, cx| {
+                                    window.dispatch_action(Box::new(StopAfterCurrent), cx);
+                                },
+                            ))),
                     )
                     .child(
                         div()
