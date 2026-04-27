@@ -46,7 +46,11 @@
                 ./translations
               ];
             };
-            nativeBuildInputs = [pkgs.cmake pkgs.pkg-config];
+            nativeBuildInputs = [
+              pkgs.cmake
+              pkgs.pkg-config
+              pkgs.pkgsBuildBuild.rustPlatform.bindgenHook
+            ];
             buildInputs = lib.flatten [
               (lib.optionals isLinux [
                 pkgs.libxkbcommon
@@ -56,6 +60,7 @@
                 (pkgs.alsa-lib-with-plugins.override {
                   plugins = [pkgs.alsa-plugins pkgs.pipewire];
                 })
+                pkgs.pipewire
               ])
               (lib.optionals isDarwin [
                 pkgs.apple-sdk_15
